@@ -6,10 +6,9 @@ A VS Code extension that displays your Cursor Editor usage statistics in the sta
 
 - Real-time display of Cursor usage statistics in the VS Code status bar
 - Detailed tooltip showing:
-  - Total tokens used
-  - Messages sent
-  - Characters generated
-  - Other relevant statistics
+  - Premium fast requests sent
+  - Total Usage-based requests sent
+  - Total Cost of Usage-based requests sent
 - Easy session token management
 - Graph icon indicating active statistics tracking
 

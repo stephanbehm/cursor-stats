@@ -2,12 +2,28 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "publisher": "Dwtexe",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dwtexe/cursor-stats"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "cursor",
+    "cursor.com",
+    "cursor-ide",
+    "statistics",
+    "monitoring",
+    "usage",
+    "analytics"
   ],
   "activationEvents": [
     "onStartupFinished"
