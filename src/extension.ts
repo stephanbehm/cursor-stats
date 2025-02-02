@@ -2,6 +2,10 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import axios from 'axios';
+import * as sqlite3 from 'sqlite3';
+import * as path from 'path';
+import * as os from 'os';
+import * as jwt from 'jsonwebtoken';
 
 interface UsageItem {
 	calculation: string;
@@ -25,6 +29,10 @@ interface CursorStats {
 	};
 }
 
+interface SQLiteRow {
+	value: string;
+}
+
 let statusBarItem: vscode.StatusBarItem;
 let updateInterval: NodeJS.Timeout;
 let extensionContext: vscode.ExtensionContext;
@@ -33,26 +41,60 @@ function isValidToken(token: string | undefined): boolean {
 	return token !== undefined && token.startsWith('user_');
 }
 
+async function getCursorTokenFromDB(): Promise<string | undefined> {
+	return new Promise((resolve, reject) => {
+		let dbPath = '';
+		if (process.platform === 'win32') {
+			dbPath = path.join(process.env.APPDATA || '', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+		} else if (process.platform === 'darwin') {
+			dbPath = path.join(os.homedir(), 'Library', 'Application Support', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+		} else {
+			dbPath = path.join(os.homedir(), '.config', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+		}
+
+		const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+			if (err) {
+				console.error('Error opening database:', err);
+				resolve(undefined);
+				return;
+			}
+		});
+
+		db.get("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'", [], (err, row: SQLiteRow) => {
+			db.close();
+			if (err) {
+				console.error('Error querying database:', err);
+				resolve(undefined);
+				return;
+			}
+
+			if (!row) {
+				resolve(undefined);
+				return;
+			}
+
+			try {
+				const token = row.value;
+				const decoded = jwt.decode(token, { complete: true });
+				if (!decoded || !decoded.payload || !decoded.payload.sub) {
+					resolve(undefined);
+					return;
+				}
+
+				const sub = decoded.payload.sub.toString();
+				const userId = sub.split('|')[1];
+				const sessionToken = `${userId}%3A%3A${token}`;
+				resolve(sessionToken);
+			} catch (error) {
+				console.error('Error processing token:', error);
+				resolve(undefined);
+			}
+		});
+	});
+}
+
 async function getValidToken(context: vscode.ExtensionContext): Promise<string | undefined> {
-	// First try to get from workspace settings
-	const configToken = vscode.workspace.getConfiguration().get('cursorStats.sessionToken') as string;
-	if (isValidToken(configToken)) {
-		return configToken;
-	}
-
-	// If config token was explicitly cleared, clear the global state too
-	if (configToken === '') {
-		await context.globalState.update('cursorSessionToken', undefined);
-		return undefined;
-	}
-
-	// Then try global state
-	const stateToken = context.globalState.get('cursorSessionToken') as string;
-	if (isValidToken(stateToken)) {
-		return stateToken;
-	}
-
-	return undefined;
+	return await getCursorTokenFromDB();
 }
 
 // This method is called when your extension is activated
@@ -61,48 +103,48 @@ export async function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
 	// Create status bar item
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-	statusBarItem.command = 'cursor-stats.updateToken';
-	context.subscriptions.push(statusBarItem);
-
-	// Register commands
-	let updateTokenCommand = vscode.commands.registerCommand('cursor-stats.updateToken', async () => {
-		const token = await vscode.window.showInputBox({
-			prompt: 'Enter your Cursor Session Token (must start with "user_")',
-			password: true,
-			validateInput: (value) => {
-				return isValidToken(value) ? null : 'Token must start with "user_"';
-			}
-		});
-		
-		if (token) {
-			await context.globalState.update('cursorSessionToken', token);
-			await vscode.workspace.getConfiguration().update('cursorStats.sessionToken', token, true);
-			updateStats();
-		}
+	
+	// Register command to open Cursor settings
+	const openCursorSettings = vscode.commands.registerCommand('cursor-stats.openSettings', () => {
+		vscode.env.openExternal(vscode.Uri.parse('https://www.cursor.com/settings'));
 	});
-
-	context.subscriptions.push(updateTokenCommand);
-
-	// Check if valid token exists, if not prompt for it
-	const token = await getValidToken(context);
-	if (!token) {
-		const newToken = await vscode.window.showInputBox({
-			prompt: 'Enter your Cursor Session Token to start monitoring usage (must start with "user_")',
-			password: true,
-			validateInput: (value) => {
-				return isValidToken(value) ? null : 'Token must start with "user_"';
-			}
-		});
-		
-		if (newToken) {
-			await context.globalState.update('cursorSessionToken', newToken);
-			await vscode.workspace.getConfiguration().update('cursorStats.sessionToken', newToken, true);
-		}
-	}
+	
+	// Add command to status bar item
+	statusBarItem.command = 'cursor-stats.openSettings';
+	
+	context.subscriptions.push(statusBarItem, openCursorSettings);
 
 	// Start update loop
 	updateStats();
 	updateInterval = setInterval(updateStats, 1000);
+}
+
+function formatTooltipLine(text: string, maxWidth: number = 50): string {
+	if (text.length <= maxWidth) return text;
+	const words = text.split(' ');
+	let lines = [];
+	let currentLine = '';
+
+	for (const word of words) {
+		if ((currentLine + word).length > maxWidth) {
+			if (currentLine) lines.push(currentLine.trim());
+			currentLine = word;
+		} else {
+			currentLine += (currentLine ? ' ' : '') + word;
+		}
+	}
+	if (currentLine) lines.push(currentLine.trim());
+	return lines.join('\n   ');
+}
+
+function getMaxLineWidth(lines: string[]): number {
+	return Math.max(...lines.map(line => line.length));
+}
+
+function createSeparator(width: number): string {
+	// Divide by 2 since emojis and other special characters count as double width
+	const separatorWidth = Math.floor(width / 2);
+	return '╌'.repeat(separatorWidth+5);
 }
 
 async function updateStats() {
@@ -110,50 +152,79 @@ async function updateStats() {
 		const token = await getValidToken(extensionContext);
 		
 		if (!token) {
-			statusBarItem.text = "$(warning) Cursor Stats: No valid token";
-			statusBarItem.tooltip = 'Click to add a valid Cursor Session Token (must start with "user_")';
+			statusBarItem.text = "$(alert) Cursor Stats: No token found";
+			statusBarItem.tooltip = '⚠️ Could not retrieve Cursor token from database';
 			statusBarItem.show();
 			return;
 		}
 
-		const stats = await fetchCursorStats(token);
+		const stats = await fetchCursorStats(token).catch(async (error) => {
+			if (error.response?.status === 401 || error.response?.status === 403) {
+				console.log('Token expired or invalid, trying to get new token from DB');
+				const newToken = await getCursorTokenFromDB();
+				if (newToken) {
+					return await fetchCursorStats(newToken);
+				}
+			}
+			throw error;
+		});
+
+		if (!stats) {
+			throw new Error('Failed to fetch stats');
+		}
 		
-		// Format usage pricing details
 		let costText = '';
-		let tooltipText = 'Cursor Usage Statistics\n';
-		tooltipText += '━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
-		tooltipText += 'Usage-Based Pricing:\n';
+		
+		// Build content first to determine width
+		const title = '⚡ Cursor Usage Statistics ⚡';
+		const contentLines = [
+			title,
+			'',
+			'🚀 Premium Fast Requests'
+		];
+		
+		const usagePercent = Math.round((stats.premiumRequests.current / stats.premiumRequests.limit) * 100);
+		contentLines.push(
+			formatTooltipLine(`   • ${stats.premiumRequests.current}/${stats.premiumRequests.limit} requests used`),
+			formatTooltipLine(`   📊 ${usagePercent}% utilized ${getUsageEmoji(usagePercent)}`),
+			'',
+			'📈 Usage-Based Pricing'
+		);
 		
 		if (stats.lastMonth.usageBasedPricing.length > 0) {
 			const items = stats.lastMonth.usageBasedPricing;
 			const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
 			
-			// Calculate maximum lengths for each component
-			const maxIndexLength = items.length.toString().length;
-			const maxCalcLength = Math.max(...items.map(item => item.calculation.length));
-			const maxCostLength = Math.max(...items.map(item => item.totalDollars.length));
+			for (const item of items) {
+				contentLines.push(formatTooltipLine(`   • ${item.calculation} ➜ ${item.totalDollars}`));
+			}
 			
-			// Calculate padding for perfect alignment
-			const indexPadding = 6;  // Space after the index number
-			const equalsPadding = 2; // Space around equals sign
+			contentLines.push(
+				'',
+				formatTooltipLine(`💳 Total Cost: $${totalCost.toFixed(2)}`)
+			);
 			
-			// Add each usage item to tooltip with proper alignment
-			items.forEach((item, index) => {
-				const indexStr = `${index + 1}.`.padEnd(maxIndexLength + indexPadding);
-				const calcStr = item.calculation.padStart(maxCalcLength);
-				const costStr = item.totalDollars.padStart(maxCostLength);
-				tooltipText += `      ${indexStr}${calcStr}  =  ${costStr}\n`;
-			});
-			
-			costText = ` (+$${totalCost.toFixed(2)})`;
+			costText = ` $(credit-card) $${totalCost.toFixed(2)}`;
 		} else {
-			tooltipText += '      No usage data for last month';
+			contentLines.push('   ℹ️ No usage data for last month');
 		}
 
-		tooltipText += '\n\nPremium Fast Requests:\n';
-		tooltipText += `      ${stats.premiumRequests.current}/${stats.premiumRequests.limit} requests used`;
-		tooltipText += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-		tooltipText += 'Click to update token';
+		contentLines.push(
+			'',
+			formatTooltipLine(`📅 Period: ${getMonthName(stats.lastMonth.month)} ${stats.lastMonth.year}`)
+		);
+
+		// Calculate separator width based on content
+		const maxWidth = getMaxLineWidth(contentLines);
+		const separator = createSeparator(maxWidth);
+
+		// Assemble final tooltip with dynamic separators
+		let tooltipText = [
+			title,
+			separator,
+			...contentLines.slice(1),
+			separator
+		].join('\n');
 
 		statusBarItem.text = `$(graph) ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
 		statusBarItem.tooltip = tooltipText;
@@ -161,12 +232,35 @@ async function updateStats() {
 	} catch (error) {
 		console.error('Error updating stats:', error);
 		statusBarItem.text = "$(error) Cursor Stats: Error";
-		let tooltipText = 'Error fetching Cursor stats\n';
-		tooltipText += '━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-		tooltipText += 'Click to update token';
+		const errorLines = [
+			'⚠️ Error fetching Cursor stats',
+			'❌ Unable to retrieve usage statistics'
+		];
+		const errorSeparator = createSeparator(getMaxLineWidth(errorLines));
+		let tooltipText = [
+			errorLines[0],
+			errorSeparator,
+			errorLines[1]
+		].join('\n');
 		statusBarItem.tooltip = tooltipText;
 		statusBarItem.show();
 	}
+}
+
+function getUsageEmoji(percentage: number): string {
+	if (percentage >= 90) return '🔴';
+	if (percentage >= 75) return '🟡';
+	if (percentage >= 50) return '🔵';
+	return '✅';
+}
+
+function getMonthName(month: number): string {
+	const months = [
+		'January', 'February', 'March', 'April',
+		'May', 'June', 'July', 'August',
+		'September', 'October', 'November', 'December'
+	];
+	return months[month - 1];
 }
 
 async function fetchCursorStats(token: string): Promise<CursorStats> {

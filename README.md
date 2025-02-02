@@ -20,24 +20,26 @@ We're working on exciting new features to enhance your experience:
 - Visual analytics with graphs for historical request usage
 - Project-specific request usage monitoring
 - Dedicated activity bar section for enhanced statistics view
+- Customizable display preferences:
+  - Choose which quotas to display
+  - Hide unused models
+  - Configure status bar information
+- Smart notifications system:
+  - IDE alerts at 75%, 90%, and 100% usage
+  - Customizable threshold alerts
+- Dynamic status bar theming:
+  - Color changes based on usage levels
+  - Visual indicators for quota status
+  - Custom color scheme options
 
 ## Installation
 
 1. Install the extension from VS Code Marketplace
-2. Get your Cursor session token (see Setup section below)
-3. Enter your session token when prompted by the extension
+2. Use it happily
 
 ## Setup
 
-1. After installation, the extension will prompt you for your Cursor session token
-2. To get your session token:
-   - Visit [Cursor Settings](https://www.cursor.com/settings)
-   - Open your browser's Developer Tools (F12 or right-click -> Inspect)
-   - Go to the "Application" or "Storage" tab (in Chrome/Firefox)
-   - Look for "Cookies" in the left sidebar
-   - Find the cookie named "WorkosCursorSessionToken".
-   - Copy the cookie value - this is your session token
-3. The token will be securely stored and used to fetch your usage statistics
+1. Its Just Works
 
 ## Usage
 
@@ -54,7 +56,6 @@ Once configured, the extension will:
 
 ## Privacy & Security
 
-- Your session token is stored securely in VS Code's secret storage
 - All data is fetched directly from Cursor's servers
 - No data is shared with third parties
 
@@ -63,6 +64,12 @@ Once configured, the extension will:
 Found a bug or have a feature request? Please open an issue on our [GitHub repository](https://github.com/dwtexe/cursor-stats).
 
 ## Release Notes
+
+### 1.0.2 (2025-02-02)
+- Added click-to-settings functionality in status bar
+- Enhanced tooltip UI with better formatting and icons
+- Improved separator styling for better readability
+- Automatic token retrieval from local database
 
 ### 1.0.1 (2025-02-02)
 - Added extension icon for better visibility

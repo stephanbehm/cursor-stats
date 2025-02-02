@@ -11,6 +11,28 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Visual analytics with graphs for historical request usage
 - Project-specific request usage monitoring
 - Dedicated activity bar section for enhanced statistics view
+- Customization features:
+  - Configurable quota display options
+  - Hide/show specific model statistics
+  - Customizable status bar information
+- Smart notification system:
+  - Configurable usage threshold alerts (75%, 90%, 100%)
+  - In-IDE notifications for quota management
+- Dynamic status bar improvements:
+  - Usage-based color theming
+  - Visual status indicators
+  - Custom color scheme support
+
+## [1.0.2] - 2025-02-02
+
+### Added
+- Click-to-settings functionality in status bar
+- Automatic token retrieval from local database
+
+### Changed
+- Enhanced tooltip UI with better formatting and icons
+- Improved separator styling for better readability
+- Updated status bar icons for better visual consistency
 
 ## [1.0.1] - 2025-02-02
 
