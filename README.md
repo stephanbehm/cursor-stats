@@ -1,6 +1,6 @@
 # Cursor Stats for VS Code
 
-A VS Code extension that displays your Cursor Editor usage statistics in the status bar.
+A Cursor extension that displays your Cursor Subscription usage statistics in the status bar. 
 
 ## Features
 
@@ -11,6 +11,15 @@ A VS Code extension that displays your Cursor Editor usage statistics in the sta
   - Total Cost of Usage-based requests sent
 - Easy session token management
 - Graph icon indicating active statistics tracking
+
+## Upcoming Features
+
+We're working on exciting new features to enhance your experience:
+
+- Session based request tracking
+- Visual analytics with graphs for historical request usage
+- Project-specific request usage monitoring
+- Dedicated activity bar section for enhanced statistics view
 
 ## Installation
 
@@ -55,7 +64,12 @@ Found a bug or have a feature request? Please open an issue on our [GitHub repos
 
 ## Release Notes
 
-### 1.0.0
+### 1.0.1 (2025-02-02)
+- Added extension icon for better visibility
+- Improved tooltip formatting for clearer information display
+- Enhanced list item alignment in displays
+
+### 1.0.0 (2025-02-02)
 - Initial release
 - Status bar integration with usage statistics
 - Tooltip with detailed information
