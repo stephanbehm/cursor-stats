@@ -9,8 +9,43 @@ A Cursor extension that displays your Cursor Subscription usage statistics in th
   - Premium fast requests sent
   - Total Usage-based requests sent
   - Total Cost of Usage-based requests sent
+  - Quick action buttons for common tasks
+- Interactive commands:
+  - Refresh Statistics
+  - Open Settings
+  - Usage Based Pricing Settings
+- Dynamic status bar colors based on usage levels
+- WSL (Windows Subsystem for Linux) support
 - Easy session token management
 - Graph icon indicating active statistics tracking
+- Debug logging system for troubleshooting
+
+## Current Features
+
+- Dynamic status bar theming:
+  - Color changes based on usage levels (green to red)
+  - Visual indicators for quota status
+- Enhanced tooltip display:
+  - Centered section titles
+  - Clean, organized layout
+  - Combined timestamp and period information
+  - Intuitive usage progress visualization
+  - Interactive action buttons
+- Cross-platform support:
+  - Windows
+  - Linux
+  - WSL (Windows Subsystem for Linux)
+  - macOS (coming soon)
+- Debugging and Configuration:
+  - Configurable logging system
+  - Detailed error reporting
+  - Easy troubleshooting options
+
+## Settings
+
+The extension provides the following settings:
+
+- `cursorStats.enableLogging`: Enable detailed logging for debugging purposes (default: false)
 
 ## Upcoming Features
 
@@ -20,17 +55,9 @@ We're working on exciting new features to enhance your experience:
 - Visual analytics with graphs for historical request usage
 - Project-specific request usage monitoring
 - Dedicated activity bar section for enhanced statistics view
-- Customizable display preferences:
-  - Choose which quotas to display
-  - Hide unused models
-  - Configure status bar information
 - Smart notifications system:
   - IDE alerts at 75%, 90%, and 100% usage
   - Customizable threshold alerts
-- Dynamic status bar theming:
-  - Color changes based on usage levels
-  - Visual indicators for quota status
-  - Custom color scheme options
 
 ## Installation
 
@@ -53,6 +80,11 @@ Once configured, the extension will:
 
 - VS Code version 1.80.0 or higher
 - Active Cursor Editor account and session token
+- Supported platforms:
+  - Windows
+  - Linux
+  - WSL (Windows Subsystem for Linux)
+  - macOS support coming soon
 
 ## Privacy & Security
 
@@ -64,6 +96,15 @@ Once configured, the extension will:
 Found a bug or have a feature request? Please open an issue on our [GitHub repository](https://github.com/dwtexe/cursor-stats).
 
 ## Release Notes
+
+### 1.0.4 (2025-02-02)
+- Added WSL (Windows Subsystem for Linux) support
+- Implemented dynamic status bar colors
+- Enhanced tooltip formatting and layout
+- Added interactive buttons for quick actions
+- Implemented debug logging system
+- Improved error handling and stability
+- Note: macOS support is planned for the next release
 
 ### 1.0.2 (2025-02-02)
 - Added click-to-settings functionality in status bar

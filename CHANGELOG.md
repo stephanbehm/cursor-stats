@@ -2,11 +2,10 @@
 
 All notable changes to the "cursor-stats" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
 ## Upcoming Features
 
 ### Planned
+- macOS support
 - Session based request tracking
 - Visual analytics with graphs for historical request usage
 - Project-specific request usage monitoring
@@ -22,6 +21,34 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
   - Usage-based color theming
   - Visual status indicators
   - Custom color scheme support
+
+## [1.0.4] - 2025-02-02
+
+### Added
+- WSL (Windows Subsystem for Linux) support for database path
+- Dynamic status bar colors based on usage percentage
+- Interactive buttons in tooltip for quick actions:
+  - Refresh Statistics
+  - Open Settings
+  - Usage Based Pricing Settings
+- Debug logging system with configuration option
+- Improved tooltip formatting and alignment
+  - Combined Period and Last Updated into a single line
+  - Left-aligned Period and right-aligned Last Updated
+  - Moved Total Cost to Current Usage line
+  - Centered section titles
+  - Added action buttons section
+
+### Changed
+- Enhanced error handling for database connections
+- Improved WSL detection and path resolution
+- Better visual organization of usage information
+- Refined status bar color transitions based on usage levels
+- Added detailed logging for debugging purposes
+- Improved command handling and user interaction
+
+### Known Issues
+- macOS support is currently not available (planned for next release)
 
 ## [1.0.2] - 2025-02-02
 

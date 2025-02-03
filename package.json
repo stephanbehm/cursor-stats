@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -34,15 +34,30 @@
       {
         "command": "cursor-stats.updateToken",
         "title": "Cursor Stats: Update Session Token"
+      },
+      {
+        "command": "cursor-stats.refreshStats",
+        "title": "Cursor Stats: Refresh Statistics",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "cursor-stats.openSettings",
+        "title": "Cursor Stats: Open Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "cursor-stats.setLimit",
+        "title": "Cursor Stats: Usage Based Pricing Settings",
+        "icon": "$(dollar)"
       }
     ],
     "configuration": {
       "title": "Cursor Stats",
       "properties": {
-        "cursorStats.sessionToken": {
-          "type": "string",
-          "default": "",
-          "description": "Your Cursor Session Token"
+        "cursorStats.enableLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable detailed logging for debugging purposes"
         }
       }
     }
