@@ -6,6 +6,7 @@ import * as sqlite3 from 'sqlite3';
 import * as path from 'path';
 import * as os from 'os';
 import * as jwt from 'jsonwebtoken';
+import * as semver from 'semver';
 
 interface UsageItem {
 	calculation: string;
@@ -73,16 +74,32 @@ interface UsageLimitResponse {
 	noUsageBasedAllowed?: boolean;
 }
 
+interface GitHubRelease {
+	tag_name: string;
+	name: string;
+	prerelease: boolean;
+	published_at: string;
+	html_url: string;
+	body: string;
+}
+
+interface ReleaseCheckResult {
+	hasUpdate: boolean;
+	currentVersion: string;
+	latestVersion: string;
+	isPrerelease: boolean;
+	releaseUrl: string;
+	releaseNotes: string;
+}
+
 let statusBarItem: vscode.StatusBarItem;
 let updateInterval: NodeJS.Timeout;
 let extensionContext: vscode.ExtensionContext;
 let outputChannel: vscode.OutputChannel | undefined;
 let lastTimingInfo: TimingInfo | null = null;
 let dbConnection: sqlite3.Database | null = null;
-
-function isValidToken(token: string | undefined): boolean {
-	return token !== undefined && token.startsWith('user_');
-}
+let lastReleaseCheck: number = 0;
+const RELEASE_CHECK_INTERVAL = 1000 * 60 * 60; // Check every hour
 
 async function getCursorTokenFromDB(): Promise<string | undefined> {
 	return new Promise((resolve, reject) => {
@@ -305,19 +322,19 @@ function log(message: string, error: boolean = false): void {
 	const config = vscode.workspace.getConfiguration('cursorStats');
 	const loggingEnabled = config.get<boolean>('enableLogging', false);
 	
-	// During development/debugging, show all logs
-	// Always log errors, initialization logs, status bar logs, database logs, and API calls
+	// Only log if explicitly enabled, or if it's a critical error
 	const shouldLog = error || 
-					 loggingEnabled || 
-					 message.includes('[Initialization]') || 
-					 message.includes('[Status Bar]') ||
-					 message.includes('[Database]') ||
-					 message.includes('[DB Check]') ||
-					 message.includes('[Auth]') ||
-					 message.includes('[Stats]') ||
-					 message.includes('[API]') ||
-					 message.includes('[Critical]');
-	
+					 (loggingEnabled && (
+						message.includes('[Initialization]') || 
+						message.includes('[Status Bar]') ||
+						message.includes('[Database]') ||
+						message.includes('[DB Check]') ||
+						message.includes('[Auth]') ||
+						message.includes('[Stats]') ||
+						message.includes('[API]') ||
+						message.includes('[GitHub]')
+					 ));
+
 	if (shouldLog) {
 		safeLog(message, error);
 	}
@@ -497,6 +514,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		// Start monitoring loop with optimized interval
 		log('[Monitoring] Starting monitoring loop...');
 		updateInterval = setInterval(monitorDatabase, 1000);
+
+		// Check for updates on startup
+		await checkForUpdates();
+		
+		// Schedule periodic update checks
+		setInterval(checkForUpdates, RELEASE_CHECK_INTERVAL);
+
 		log('[Initialization] Extension activation completed successfully');
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -1169,5 +1193,93 @@ async function checkUsageBasedStatus(token: string): Promise<{isEnabled: boolean
 		return {
 			isEnabled: false
 		};
+	}
+}
+
+async function checkGitHubRelease(): Promise<ReleaseCheckResult | null> {
+	try {
+		log('[GitHub] Starting release check...');
+		
+		// Get current version from package.json
+		const packageJson = require('../package.json');
+		const currentVersion = packageJson.version;
+		log(`[GitHub] Current version: ${currentVersion}`);
+
+		log('[GitHub] Fetching releases from GitHub API...');
+		const response = await axios.get('https://api.github.com/repos/dwtexe/cursor-stats/releases');
+		const releases: GitHubRelease[] = response.data;
+		log(`[GitHub] Fetched ${releases.length} releases from GitHub`);
+
+		if (!releases || releases.length === 0) {
+			log('[GitHub] No releases found');
+			return null;
+		}
+
+		// Find the latest release (can be prerelease or stable)
+		const latestRelease = releases[0];
+		const latestVersion = latestRelease.tag_name.replace('v', '');
+		log(`[GitHub] Latest release: ${latestVersion} (${latestRelease.prerelease ? 'pre-release' : 'stable'})`);
+
+		// Use semver to compare versions
+		const hasUpdate = semver.gt(latestVersion, currentVersion);
+		log(`[GitHub] Version comparison: ${currentVersion} -> ${latestVersion} (update available: ${hasUpdate})`);
+
+		if (!hasUpdate) {
+			log('[GitHub] No update needed - current version is up to date');
+			return null;
+		}
+
+		log(`[GitHub] Update available: ${latestRelease.name}`);
+		log(`[GitHub] Release notes: ${latestRelease.body.substring(0, 100)}...`);
+
+		return {
+			hasUpdate,
+			currentVersion,
+			latestVersion,
+			isPrerelease: latestRelease.prerelease,
+			releaseUrl: latestRelease.html_url,
+			releaseNotes: latestRelease.body
+		};
+	} catch (error: any) {
+		log(`[GitHub] Error checking for updates: ${error.message}`, true);
+		log(`[GitHub] Error details: ${JSON.stringify({
+			status: error.response?.status,
+			data: error.response?.data,
+			message: error.message
+		})}`, true);
+		return null;
+	}
+}
+
+async function checkForUpdates(): Promise<void> {
+	const now = Date.now();
+	if (now - lastReleaseCheck < RELEASE_CHECK_INTERVAL) {
+		log('[GitHub] Skipping update check - too soon since last check');
+		return;
+	}
+
+	log('[GitHub] Starting periodic update check...');
+	lastReleaseCheck = now;
+	const releaseInfo = await checkGitHubRelease();
+
+	if (releaseInfo?.hasUpdate) {
+		const releaseType = releaseInfo.isPrerelease ? 'Pre-release' : 'Stable release';
+		const message = `${releaseType} ${releaseInfo.latestVersion} is available! You are on ${releaseInfo.currentVersion}`;
+		log(`[GitHub] Showing update notification: ${message}`);
+		
+		const selection = await vscode.window.showInformationMessage(
+			message,
+			'View Release',
+			'Ignore'
+		);
+
+		if (selection === 'View Release') {
+			log('[GitHub] User clicked "View Release" - opening browser...');
+			vscode.env.openExternal(vscode.Uri.parse(releaseInfo.releaseUrl));
+		} else {
+			log('[GitHub] Update notification dismissed');
+		}
+	} else {
+		log('[GitHub] No updates available');
 	}
 }
