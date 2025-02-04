@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.4",
+  "version": "1.0.4-beta.1",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -68,7 +68,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "postinstall": "node scripts/postinstall.js"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.8",

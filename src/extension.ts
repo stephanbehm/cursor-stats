@@ -127,6 +127,7 @@ async function getCursorTokenFromDB(): Promise<string | undefined> {
 				resolve(undefined);
 				return;
 			}
+
 			log('Successfully opened database connection');
 		});
 
@@ -202,16 +203,59 @@ async function initializeDatabase(): Promise<void> {
 
 	return new Promise((resolve, reject) => {
 		const dbPath = getCursorDBPath();
-		dbConnection = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
-			if (err) {
-				log(`Error initializing database connection: ${err}`, true);
-				dbConnection = null;
-				reject(err);
-				return;
-			}
-			log('Database connection initialized successfully');
-			resolve();
-		});
+		
+		// First try to open with normal sqlite3
+		try {
+			dbConnection = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+				if (err) {
+					const sqlError = err as SQLiteError;
+					log(`Error initializing database connection: ${err}`, true);
+					log('Database error details: ' + JSON.stringify({
+						code: sqlError.code,
+						errno: sqlError.errno,
+						message: sqlError.message,
+						path: dbPath
+					}), true);
+
+					// If we're on Apple Silicon, try rebuilding sqlite3
+					if (process.platform === 'darwin' && process.arch === 'arm64') {
+						log('Detected Apple Silicon, attempting to rebuild sqlite3...', true);
+						try {
+							const { execSync } = require('child_process');
+							execSync('npm rebuild sqlite3 --build-from-source --target_arch=arm64', {
+								stdio: 'inherit'
+							});
+							
+							// Try opening the database again after rebuild
+							dbConnection = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (rebuildErr) => {
+								if (rebuildErr) {
+									log('Failed to open database after rebuild: ' + rebuildErr, true);
+									dbConnection = null;
+									resolve(); // Resolve without error to allow extension to continue
+								} else {
+									log('Successfully opened database after rebuild');
+									resolve();
+								}
+							});
+						} catch (rebuildError) {
+							log('Failed to rebuild sqlite3: ' + rebuildError, true);
+							dbConnection = null;
+							resolve(); // Resolve without error to allow extension to continue
+						}
+					} else {
+						dbConnection = null;
+						resolve(); // Resolve without error to allow extension to continue
+					}
+				} else {
+					log('Database connection initialized successfully');
+					resolve();
+				}
+			});
+		} catch (error) {
+			log(`Critical error during database initialization: ${error}`, true);
+			dbConnection = null;
+			resolve(); // Resolve without error to allow extension to continue
+		}
 	});
 }
 
