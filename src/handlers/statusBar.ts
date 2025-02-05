@@ -149,7 +149,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
     tooltip.appendMarkdown('<div align="center">\n\n');
     
     // First row: Account and Extension settings
-    tooltip.appendMarkdown('🌐 [Account Settings](https://www.cursor.com/dashboard) • ');
+    tooltip.appendMarkdown('🌐 [Account Settings](https://www.cursor.com/settings) • ');
     tooltip.appendMarkdown('⚙️ [Extension Settings](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats%22)\n\n');
     
     // Second row: Usage Based Pricing, Refresh, and Last Updated
