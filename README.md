@@ -1,129 +1,73 @@
-# Cursor Stats for VS Code
+# Cursor Stats Extension
 
-A Cursor extension that displays your Cursor Subscription usage statistics in the status bar. 
+A VS Code extension that provides real-time statistics about your Cursor usage, including premium requests and usage-based pricing information.
+
+## Project Structure
+
+The project is organized into the following directories:
+
+```
+cursor-stats/
+├── src/
+│   ├── interfaces/      # TypeScript interfaces and types
+│   │   └── types.ts
+│   ├── services/       # Core services for different functionalities
+│   │   ├── api.ts      # API communication with Cursor servers
+│   │   ├── database.ts # SQLite database operations
+│   │   └── github.ts   # GitHub release checking
+│   ├── handlers/       # UI and event handlers
+│   │   └── statusBar.ts # Status bar UI management
+│   ├── utils/          # Utility functions
+│   │   └── logger.ts   # Logging functionality
+│   └── extension.ts    # Main extension file
+```
+
+### Components
+
+1. **interfaces/types.ts**
+   - Contains all TypeScript interfaces used throughout the extension
+   - Ensures type safety and better code organization
+
+2. **services/**
+   - **api.ts**: Handles all communication with Cursor's API endpoints
+   - **database.ts**: Manages SQLite database operations for token and usage data
+   - **github.ts**: Handles GitHub release checking and updates
+
+3. **handlers/**
+   - **statusBar.ts**: Manages the VS Code status bar item and its UI
+
+4. **utils/**
+   - **logger.ts**: Provides logging functionality with different levels and channels
+
+5. **extension.ts**
+   - Main extension file that ties everything together
+   - Handles extension activation/deactivation
+   - Manages command registration and lifecycle
 
 ## Features
 
-- Real-time display of Cursor usage statistics in the VS Code status bar
-- Detailed tooltip showing:
-  - Premium fast requests sent
-  - Total Usage-based requests sent
-  - Total Cost of Usage-based requests sent
-  - Quick action buttons for common tasks
-- Interactive commands:
-  - Refresh Statistics
-  - Open Settings
-  - Usage Based Pricing Settings
-- Dynamic status bar colors based on usage levels
-- WSL (Windows Subsystem for Linux) support
-- Easy session token management
-- Graph icon indicating active statistics tracking
-- Debug logging system for troubleshooting
+- Real-time monitoring of Cursor usage
+- Premium request tracking
+- Usage-based pricing information
+- GitHub release updates
+- Customizable status bar display
+- Detailed tooltips with usage statistics
+- Command palette integration
 
-## Current Features
+## Development
 
-- Dynamic status bar theming:
-  - Color changes based on usage levels (green to red)
-  - Visual indicators for quota status
-- Enhanced tooltip display:
-  - Centered section titles
-  - Clean, organized layout
-  - Combined timestamp and period information
-  - Intuitive usage progress visualization
-  - Interactive action buttons
-- Cross-platform support:
-  - Windows
-  - Linux
-  - WSL (Windows Subsystem for Linux)
-  - macOS (coming soon)
-- Debugging and Configuration:
-  - Configurable logging system
-  - Detailed error reporting
-  - Easy troubleshooting options
-
-## Settings
-
-The extension provides the following settings:
-
-- `cursorStats.enableLogging`: Enable detailed logging for debugging purposes (default: false)
-
-## Upcoming Features
-
-We're working on exciting new features to enhance your experience:
-
-- Session based request tracking
-- Visual analytics with graphs for historical request usage
-- Project-specific request usage monitoring
-- Dedicated activity bar section for enhanced statistics view
-- Smart notifications system:
-  - IDE alerts at 75%, 90%, and 100% usage
-  - Customizable threshold alerts
-
-## Installation
-
-1. Install the extension from VS Code Marketplace
-2. Use it happily
-
-## Setup
-
-1. Its Just Works
-
-## Usage
-
-Once configured, the extension will:
-- Display a graph icon (📊) in the status bar
-- Show current usage statistics
-- Update statistics periodically
-- Provide detailed information on hover
-
-## Requirements
-
-- VS Code version 1.80.0 or higher
-- Active Cursor Editor account and session token
-- Supported platforms:
-  - Windows
-  - Linux
-  - WSL (Windows Subsystem for Linux)
-  - macOS support coming soon
-
-## Privacy & Security
-
-- All data is fetched directly from Cursor's servers
-- No data is shared with third parties
+1. Clone the repository
+2. Run `npm install` to install dependencies
+3. Open the project in VS Code
+4. Press F5 to start debugging
 
 ## Contributing
 
-Found a bug or have a feature request? Please open an issue on our [GitHub repository](https://github.com/dwtexe/cursor-stats).
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## Release Notes
+## License
 
-### 1.0.4 (2025-02-02)
-- Added WSL (Windows Subsystem for Linux) support
-- Implemented dynamic status bar colors
-- Enhanced tooltip formatting and layout
-- Added interactive buttons for quick actions
-- Implemented debug logging system
-- Improved error handling and stability
-- Note: macOS support is planned for the next release
-
-### 1.0.2 (2025-02-02)
-- Added click-to-settings functionality in status bar
-- Enhanced tooltip UI with better formatting and icons
-- Improved separator styling for better readability
-- Automatic token retrieval from local database
-
-### 1.0.1 (2025-02-02)
-- Added extension icon for better visibility
-- Improved tooltip formatting for clearer information display
-- Enhanced list item alignment in displays
-
-### 1.0.0 (2025-02-02)
-- Initial release
-- Status bar integration with usage statistics
-- Tooltip with detailed information
-- Secure token storage
-- Real-time statistics updates
-
----
-
-**Enjoy tracking your Cursor usage!**
+MIT
