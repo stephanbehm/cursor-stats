@@ -156,7 +156,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
     const updatedLine = lines.find(line => line.includes('Last Updated:'));
     const updatedTime = updatedLine ? formatRelativeTime(updatedLine.split(':').slice(1).join(':').trim()) : new Date().toLocaleTimeString();
     
-    tooltip.appendMarkdown('💰 [Usage Based Pricing](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats.usageBasedPricing%22) • ');
+    tooltip.appendMarkdown('💰 [Usage Based Pricing](command:cursor-stats.setLimit) • ');
     tooltip.appendMarkdown('🔄 [Refresh](command:cursor-stats.refreshStats) • ');
     tooltip.appendMarkdown(`🕒 ${updatedTime}\n\n`);
     
