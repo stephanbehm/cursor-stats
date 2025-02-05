@@ -169,6 +169,14 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
 }
 
 export function getStatusBarColor(percentage: number): vscode.ThemeColor {
+    // Check if status bar colors are enabled in settings
+    const config = vscode.workspace.getConfiguration('cursorStats');
+    const colorsEnabled = config.get<boolean>('enableStatusBarColors', true);
+    
+    if (!colorsEnabled) {
+        return new vscode.ThemeColor('statusBarItem.foreground');
+    }
+
     if (percentage >= 95) {
         return new vscode.ThemeColor('charts.red');
     } else if (percentage >= 90) {

@@ -43,10 +43,20 @@ export async function activate(context: vscode.ExtensionContext) {
 			log('[Command] Manually refreshing stats...');
 			await updateStats();
 		});
-		const openCursorSettings = vscode.commands.registerCommand('cursor-stats.openSettings', () => {
-			log('[Command] Opening Cursor settings...');
-			vscode.env.openExternal(vscode.Uri.parse('https://www.cursor.com/settings'));
+		const openCursorSettings = vscode.commands.registerCommand('cursor-stats.openSettings', async () => {
+			log('[Command] Opening extension settings...');
+			// Open settings UI and filter to show only our extension settings
+			await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:Dwtexe.cursor-stats');
 		});
+
+		// Add configuration change listener
+		const configListener = vscode.workspace.onDidChangeConfiguration(async (e) => {
+			if (e.affectsConfiguration('cursorStats.enableStatusBarColors')) {
+				log('[Settings] Status bar colors setting changed, updating display...');
+				await updateStats();
+			}
+		});
+		
 		const setLimitCommand = vscode.commands.registerCommand('cursor-stats.setLimit', async () => {
 			const token = await getCursorTokenFromDB();
 			if (!token) {
@@ -141,7 +151,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		log('[Status Bar] Command assigned to status bar item');
 		
 		// Add to subscriptions
-		context.subscriptions.push(statusBarItem, openCursorSettings, refreshCommand, setLimitCommand);
+		context.subscriptions.push(
+			statusBarItem, 
+			openCursorSettings, 
+			refreshCommand, 
+			setLimitCommand,
+			configListener
+		);
 		log('[Initialization] Subscriptions registered');
 
 		// Initialize database connection

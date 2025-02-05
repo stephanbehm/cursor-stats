@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable detailed logging for debugging purposes"
+        },
+        "cursorStats.enableStatusBarColors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable colored status bar based on usage percentage"
         }
       }
     }
