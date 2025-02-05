@@ -18,6 +18,32 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Configurable usage threshold alerts (75%, 90%, 100%)
   - In-IDE notifications for quota management
 
+## [1.0.5-beta.3] - 2024-02-14
+
+### Added
+- Support for new startOfMonth field in API response
+- Smart notification system with configurable thresholds
+- Optional status bar colors with configuration
+- Support for Cursor nightly version database paths
+- Enhanced tooltip with compact and modern layout
+- Improved settings accessibility features
+
+### Changed
+- Improved handling of usage-based pricing billing cycle (3rd/4th day)
+- Enhanced error handling and API response processing
+- Better startup behavior for notifications and status bar
+- Refined settings navigation and accessibility
+- Updated tooltip design with better organization
+
+### Fixed
+- Startup notification and status bar visibility issues
+- Double notifications on startup
+- Settings button functionality when no file is open
+- Status bar visibility during notifications
+
+### Known Issues
+- macOS support is currently not available (still working on it)
+
 ## [1.0.4] - 2025-02-02
 
 ### Added
@@ -46,9 +72,6 @@ All notable changes to the "cursor-stats" extension will be documented in this f
 - Refined status bar color transitions based on usage levels
 - Added detailed logging for debugging purposes
 - Improved command handling and user interaction
-
-### Known Issues
-- macOS support is currently not available (planned for next release)
 
 ## [1.0.2] - 2025-02-02
 
