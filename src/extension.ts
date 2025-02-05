@@ -49,8 +49,25 @@ export async function activate(context: vscode.ExtensionContext) {
 		});
 		const openCursorSettings = vscode.commands.registerCommand('cursor-stats.openSettings', async () => {
 			log('[Command] Opening extension settings...');
-			// Open settings UI and filter to show only our extension settings
-			await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:Dwtexe.cursor-stats');
+			// Use a more reliable way to open settings
+			const settingsUri = vscode.Uri.parse('vscode://ms-vscode.cursor-stats/settings');
+			try {
+				// Try to open settings directly first
+				await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:Dwtexe.cursor-stats');
+			} catch (error) {
+				log('[Command] Failed to open settings directly, trying alternative method...', true);
+				try {
+					// Fallback to opening settings view
+					await vscode.commands.executeCommand('workbench.action.openSettings');
+					// Then search for our extension
+					await vscode.commands.executeCommand('workbench.action.search.toggleQueryDetails');
+					await vscode.commands.executeCommand('workbench.action.search.action.replaceAll', '@ext:Dwtexe.cursor-stats');
+				} catch (fallbackError) {
+					log('[Command] Failed to open settings with fallback method', true);
+					// Show error message to user
+					vscode.window.showErrorMessage('Failed to open Cursor Stats settings. Please try opening VS Code settings manually.');
+				}
+			}
 		});
 
 		// Add configuration change listener
@@ -173,19 +190,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		statusBarItem.show();
 		log('[Status Bar] Initial visibility state set');
 
-		// Initial update
-		log('[Stats] Performing initial stats update...');
-		await updateStats();
-
 		// Start monitoring loop with optimized interval
 		log('[Monitoring] Starting monitoring loop...');
 		updateInterval = setInterval(monitorDatabase, 1000);
 
-		// Check for updates on startup
-		await checkForUpdates(lastReleaseCheck, RELEASE_CHECK_INTERVAL);
-		
-		// Schedule periodic update checks
-		setInterval(() => checkForUpdates(lastReleaseCheck, RELEASE_CHECK_INTERVAL), RELEASE_CHECK_INTERVAL);
+		// Initial update - delay to avoid conflict with database monitoring
+		setTimeout(async () => {
+			await updateStats();
+			// Check for updates after initial stats are loaded
+			await checkForUpdates(lastReleaseCheck, RELEASE_CHECK_INTERVAL);
+		}, 1500);
 
 		log('[Initialization] Extension activation completed successfully');
 	} catch (error) {
@@ -222,6 +236,9 @@ async function updateStats() {
 		const usageStatus = await checkUsageBasedStatus(token);
 		log(`[Stats] Usage-based pricing status: ${JSON.stringify(usageStatus)}`);
 
+		// Show status bar early to ensure visibility
+		statusBarItem.show();
+
 		log('[Stats] Token retrieved successfully, fetching stats...');
 		const stats = await fetchCursorStats(token).catch(async (error: any) => {
 			if (error.response?.status === 401 || error.response?.status === 403) {
@@ -256,6 +273,7 @@ async function updateStats() {
 			
 			statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines, true);
 			log('[Status Bar] Updated status bar with API unavailable message');
+			statusBarItem.show();
 			log('[Status Bar] Status bar visibility updated after API error');
 			return;
 		}
@@ -290,10 +308,21 @@ async function updateStats() {
 		];
 		
 		// Format premium requests progress with fixed decimal places
-		const premiumPercentFormatted = Math.round(premiumPercent); // Round to whole number
+		const premiumPercentFormatted = Math.round(premiumPercent);
+		const startDate = new Date(stats.premiumRequests.startOfMonth);
+		const endDate = new Date(startDate);
+		endDate.setMonth(endDate.getMonth() + 1);
+
+		const formatDateWithMonthName = (date: Date) => {
+			const day = date.getDate();
+			const monthName = date.toLocaleString('en-US', { month: 'long' });
+			return `${day} ${monthName}`;
+		};
+
 		contentLines.push(
 			formatTooltipLine(`   • ${stats.premiumRequests.current}/${stats.premiumRequests.limit} requests used`),
 			formatTooltipLine(`   📊 ${premiumPercentFormatted}% utilized ${getUsageEmoji(premiumPercent)}`),
+			formatTooltipLine(`   Fast Requests Period: ${formatDateWithMonthName(startDate)} - ${formatDateWithMonthName(endDate)}`),
 			'',
 			'📈 Usage-Based Pricing'
 		);
@@ -301,6 +330,22 @@ async function updateStats() {
 		if (stats.lastMonth.usageBasedPricing.length > 0) {
 			const items = stats.lastMonth.usageBasedPricing;
 			const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+			
+			// Calculate usage-based pricing period
+			const billingDay = 3; // Assuming it's the 3rd day
+			const currentDate = new Date();
+			let periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay);
+			let periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, billingDay - 1);
+			
+			// If we're before the billing day, adjust the period to the previous month
+			if (currentDate.getDate() < billingDay) {
+				periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, billingDay);
+				periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay - 1);
+			}
+			
+			contentLines.push(
+				formatTooltipLine(`   Usage Based Period: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
+			);
 			
 			for (const item of items) {
 				contentLines.push(formatTooltipLine(`   • ${item.calculation} ➜ ${item.totalDollars}`));
@@ -316,47 +361,46 @@ async function updateStats() {
 			contentLines.push('   ℹ️ No usage data for last month');
 		}
 
-		contentLines.push(
-			'',
-			formatTooltipLine(`📅 Period: ${getMonthName(stats.lastMonth.month)} ${stats.lastMonth.year}`),
-			'',
-			formatTooltipLine(`🕒 Last Updated: ${new Date().toLocaleString()}`)
-		);
-
 		// Calculate separator width based on content
 		const maxWidth = getMaxLineWidth(contentLines);
 		const separator = createSeparator(maxWidth);
 
-		// Create final tooltip content
+		// Create final tooltip content with Last Updated at the bottom
 		const tooltipLines = [
 			title,
 			separator,
-			...contentLines.slice(1)
+			...contentLines.slice(1),
+			'',
+			formatTooltipLine(`🕒 Last Updated: ${new Date().toLocaleString()}`),
 		];
 
 		// Update usage based percent for notifications
 		usageBasedPercent = usageStatus.isEnabled ? usageBasedPercent : 0;
 		
-		// Check thresholds for the active pricing model
-		if (usageStatus.isEnabled) {
-			await checkAndNotifyUsage({
-				percentage: usageBasedPercent,
-				type: 'usage-based',
-				limit: usageStatus.limit
-			});
-		} else {
-			await checkAndNotifyUsage({
-				percentage: premiumPercent,
-				type: 'premium'
-			});
-		}
-
 		log('[Status Bar] Updating status bar with new stats...');
 		statusBarItem.text = `$(graph) ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
 		statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines);
 		statusBarItem.show();
 		log('[Status Bar] Status bar visibility updated after stats update');
 		log('[Stats] Stats update completed successfully');
+
+		// Show notifications after ensuring status bar is visible
+		if (usageStatus.isEnabled) {
+			setTimeout(() => {
+				checkAndNotifyUsage({
+					percentage: usageBasedPercent,
+					type: 'usage-based',
+					limit: usageStatus.limit
+				});
+			}, 1000);
+		} else {
+			setTimeout(() => {
+				checkAndNotifyUsage({
+					percentage: premiumPercent,
+					type: 'premium'
+				});
+			}, 1000);
+		}
 	} catch (error: any) {
 		log(`[Critical] Error updating stats: ${error.message}`, true);
 		statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorBackground');
@@ -374,6 +418,7 @@ async function updateStats() {
 		];
 		
 		statusBarItem.tooltip = await createMarkdownTooltip(errorLines, true);
+		statusBarItem.show();
 		log('[Status Bar] Status bar visibility updated after error');
 	}
 }
@@ -404,7 +449,6 @@ export function deactivate() {
 async function monitorDatabase() {
 	try {
 		const currentTime = new Date().toISOString();
-		log(`[DB Check] Checking database at ${currentTime}`);
 		log(`[DB Check] Checking database at ${currentTime}`);
 		const timing = await findNewestTimingInfo();
 		

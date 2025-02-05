@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { CursorStats, UsageLimitResponse, ExtendedAxiosError, UsageItem } from '../interfaces/types';
+import { CursorStats, UsageLimitResponse, ExtendedAxiosError, UsageItem, CursorUsageResponse } from '../interfaces/types';
 import { log } from '../utils/logger';
 
 export async function getCurrentUsageLimit(token: string): Promise<UsageLimitResponse> {
@@ -110,26 +110,13 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
         length: token.length
     }));
 
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    const lastYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-
-    log('[API] Date calculations: ' + JSON.stringify({
-        currentMonth,
-        currentYear,
-        lastMonth,
-        lastYear
-    }));
-
     // Extract user ID from token
     const userId = token.split('%3A%3A')[0];
     log(`[API] Extracted userId for API calls: ${userId}`);
 
     log('[API] Fetching premium requests info...');
     try {
-        const premiumResponse = await axios.get('https://www.cursor.com/api/usage', {
+        const premiumResponse = await axios.get<CursorUsageResponse>('https://www.cursor.com/api/usage', {
             params: { user: userId },
             headers: {
                 Cookie: `WorkosCursorSessionToken=${token}`
@@ -139,23 +126,44 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
             status: premiumResponse.status,
             hasGPT4: !!premiumResponse.data['gpt-4'],
             numRequests: premiumResponse.data['gpt-4']?.numRequests,
-            maxRequests: premiumResponse.data['gpt-4']?.maxRequestUsage
+            maxRequests: premiumResponse.data['gpt-4']?.maxRequestUsage,
+            startOfMonth: premiumResponse.data.startOfMonth
         }));
+
+        // Get current date for usage-based pricing (which renews on 3rd/4th of each month)
+        const currentDate = new Date();
+        const usageBasedBillingDay = 3; // Assuming it's the 3rd day of the month
+        let usageBasedCurrentMonth = currentDate.getMonth() + 1;
+        let usageBasedCurrentYear = currentDate.getFullYear();
+        
+        // If we're in the first few days of the month (before billing date),
+        // consider the previous month as the current billing period
+        if (currentDate.getDate() < usageBasedBillingDay) {
+            usageBasedCurrentMonth = usageBasedCurrentMonth === 1 ? 12 : usageBasedCurrentMonth - 1;
+            if (usageBasedCurrentMonth === 12) {
+                usageBasedCurrentYear--;
+            }
+        }
+
+        // Calculate previous month for usage-based pricing
+        const usageBasedLastMonth = usageBasedCurrentMonth === 1 ? 12 : usageBasedCurrentMonth - 1;
+        const usageBasedLastYear = usageBasedCurrentMonth === 1 ? usageBasedCurrentYear - 1 : usageBasedCurrentYear;
 
         return {
             currentMonth: {
-                month: currentMonth,
-                year: currentYear,
-                usageBasedPricing: await fetchMonthData(token, currentMonth, currentYear)
+                month: usageBasedCurrentMonth,
+                year: usageBasedCurrentYear,
+                usageBasedPricing: await fetchMonthData(token, usageBasedCurrentMonth, usageBasedCurrentYear)
             },
             lastMonth: {
-                month: lastMonth,
-                year: lastYear,
-                usageBasedPricing: await fetchMonthData(token, lastMonth, lastYear)
+                month: usageBasedLastMonth,
+                year: usageBasedLastYear,
+                usageBasedPricing: await fetchMonthData(token, usageBasedLastMonth, usageBasedLastYear)
             },
             premiumRequests: {
                 current: premiumResponse.data['gpt-4'].numRequests,
-                limit: premiumResponse.data['gpt-4'].maxRequestUsage
+                limit: premiumResponse.data['gpt-4'].maxRequestUsage,
+                startOfMonth: premiumResponse.data.startOfMonth
             }
         };
     } catch (error: any) {

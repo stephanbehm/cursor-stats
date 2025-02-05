@@ -17,6 +17,7 @@ export interface CursorStats {
     premiumRequests: {
         current: number;
         limit: number;
+        startOfMonth: string;
     };
 }
 
@@ -80,4 +81,29 @@ export interface ReleaseCheckResult {
     isPrerelease: boolean;
     releaseUrl: string;
     releaseNotes: string;
+}
+
+export interface CursorUsageResponse {
+    'gpt-4': {
+        numRequests: number;
+        numRequestsTotal: number;
+        numTokens: number;
+        maxRequestUsage: number;
+        maxTokenUsage: number | null;
+    };
+    'gpt-3.5-turbo': {
+        numRequests: number;
+        numRequestsTotal: number;
+        numTokens: number;
+        maxRequestUsage: number | null;
+        maxTokenUsage: number | null;
+    };
+    'gpt-4-32k': {
+        numRequests: number;
+        numRequestsTotal: number;
+        numTokens: number;
+        maxRequestUsage: number | null;
+        maxTokenUsage: number | null;
+    };
+    startOfMonth: string;
 } 

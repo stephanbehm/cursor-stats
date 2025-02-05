@@ -58,114 +58,111 @@ export function formatRelativeTime(dateString: string): string {
 }
 
 export async function createMarkdownTooltip(lines: string[], isError: boolean = false): Promise<vscode.MarkdownString> {
-	const tooltip = new vscode.MarkdownString();
-	tooltip.isTrusted = true;
-	tooltip.supportHtml = true;
-	tooltip.supportThemeIcons = true;
+    const tooltip = new vscode.MarkdownString();
+    tooltip.isTrusted = true;
+    tooltip.supportHtml = true;
+    tooltip.supportThemeIcons = true;
 
-	// Header section with centered title
-	tooltip.appendMarkdown('<div align="center">\n\n');
-	tooltip.appendMarkdown('## ⚡ Cursor Usage\n\n');
-	tooltip.appendMarkdown('</div>\n\n');
+    // Header section with centered title
+    tooltip.appendMarkdown('<div align="center">\n\n');
+    tooltip.appendMarkdown('## ⚡ Cursor Usage\n\n');
+    tooltip.appendMarkdown('</div>\n\n');
 
-	if (isError) {
-		tooltip.appendMarkdown('> ⚠️ **Error State**\n\n');
-		tooltip.appendMarkdown(lines.join('\n\n'));
-	} else {
-		// Premium Requests Section
-		if (lines.some(line => line.includes('Premium Fast Requests'))) {
-			tooltip.appendMarkdown('<div align="center">\n\n');
-			tooltip.appendMarkdown('### 🚀 Premium Fast Requests\n\n');
-			tooltip.appendMarkdown('</div>\n\n');
-			
-			// Extract and format premium request info
-			const requestLine = lines.find(line => line.includes('requests used'));
-			const percentLine = lines.find(line => line.includes('utilized'));
-			if (requestLine) {
-				tooltip.appendMarkdown(`**Usage:** ${requestLine.split('•')[1].trim()}\n\n`);
-				if (percentLine) {
-					tooltip.appendMarkdown(`**Progress:** ${percentLine.split('📊')[1].trim()}\n\n`);
-				}
-			}
-		}
+    if (isError) {
+        tooltip.appendMarkdown('> ⚠️ **Error State**\n\n');
+        tooltip.appendMarkdown(lines.join('\n\n'));
+    } else {
+        // Premium Requests Section
+        if (lines.some(line => line.includes('Premium Fast Requests'))) {
+            tooltip.appendMarkdown('<div align="center">\n\n');
+            tooltip.appendMarkdown('### 🚀 Premium Fast Requests\n\n');
+            tooltip.appendMarkdown('</div>\n\n');
+            
+            // Extract and format premium request info
+            const requestLine = lines.find(line => line.includes('requests used'));
+            const percentLine = lines.find(line => line.includes('utilized'));
+            const startOfMonthLine = lines.find(line => line.includes('Fast Requests Period:'));
+            
+            if (requestLine) {
+                tooltip.appendMarkdown(`**Usage:** ${requestLine.split('•')[1].trim()}\n\n`);
+                if (percentLine) {
+                    tooltip.appendMarkdown(`**Progress:** ${percentLine.split('📊')[1].trim()}\n\n`);
+                }
+                if (startOfMonthLine) {
+                    tooltip.appendMarkdown(`**Period:** ${startOfMonthLine.split(':')[1].trim()}\n\n`);
+                }
+            }
+        }
 
-		// Usage Based Pricing Section
-		const token = await getCursorTokenFromDB();
-		let isEnabled = false;
+        // Usage Based Pricing Section
+        const token = await getCursorTokenFromDB();
+        let isEnabled = false;
 
-		if (token) {
-			try {
-				const limitResponse = await getCurrentUsageLimit(token);
-				isEnabled = !limitResponse.noUsageBasedAllowed;
-				const costLine = lines.find(line => line.includes('Total Cost:'));
-				const totalCost = costLine ? parseFloat(costLine.split('$')[1]) : 0;
+        if (token) {
+            try {
+                const limitResponse = await getCurrentUsageLimit(token);
+                isEnabled = !limitResponse.noUsageBasedAllowed;
+                const costLine = lines.find(line => line.includes('Total Cost:'));
+                const totalCost = costLine ? parseFloat(costLine.split('$')[1]) : 0;
+                const usageBasedPeriodLine = lines.find(line => line.includes('Usage Based Period:'));
 
-				tooltip.appendMarkdown('<div align="center">\n\n');
-				tooltip.appendMarkdown(`### 📈 Usage-Based Pricing (${isEnabled ? 'Enabled' : 'Disabled'})\n\n`);
-				tooltip.appendMarkdown('</div>\n\n');
-				
-				if (isEnabled && limitResponse.hardLimit) {
-					const usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
-					const usageEmoji = getUsageLimitEmoji(totalCost, limitResponse.hardLimit);
-					tooltip.appendMarkdown(`**Monthly Limit:** $${limitResponse.hardLimit.toFixed(2)} (${usagePercentage}% used) ${usageEmoji}\n\n`);
-				} else if (!isEnabled) {
-					tooltip.appendMarkdown('> ℹ️ Usage-based pricing is currently disabled\n\n');
-				}
-				
-				// Show usage details regardless of enabled/disabled status
-				const pricingLines = lines.filter(line => line.includes('*') && line.includes('➜'));
-				if (pricingLines.length > 0) {
-					const costLine = lines.find(line => line.includes('Total Cost:'));
-					const totalCost = costLine ? costLine.split('Total Cost:')[1].trim() : '';
-					
-					tooltip.appendMarkdown(`**Current Usage** (Total: ${totalCost}):\n\n`);
-					pricingLines.forEach(line => {
-						const [calc, cost] = line.split('➜').map(part => part.trim());
-						tooltip.appendMarkdown(`• ${calc.replace('•', '').trim()} → ${cost}\n\n`);
-					});
-				} else {
-					tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
-				}
-			} catch (error: any) {
-				log('[API] Error fetching limit for tooltip: ' + error.message, true);
-				tooltip.appendMarkdown('> ⚠️ Error checking usage-based pricing status\n\n');
-			}
-		} else {
-			tooltip.appendMarkdown('> ⚠️ Unable to check usage-based pricing status\n\n');
-		}
+                tooltip.appendMarkdown('<div align="center">\n\n');
+                tooltip.appendMarkdown(`### 📈 Usage-Based Pricing (${isEnabled ? 'Enabled' : 'Disabled'})\n\n`);
+                tooltip.appendMarkdown('</div>\n\n');
+                
+                if (isEnabled && limitResponse.hardLimit) {
+                    const usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
+                    const usageEmoji = getUsageLimitEmoji(totalCost, limitResponse.hardLimit);
+                    tooltip.appendMarkdown(`**Monthly Limit:** $${limitResponse.hardLimit.toFixed(2)} (${usagePercentage}% used) ${usageEmoji}\n\n`);
+                    if (usageBasedPeriodLine) {
+                        tooltip.appendMarkdown(`**Period:** ${usageBasedPeriodLine.split(':')[1].trim()}\n\n`);
+                    }
+                } else if (!isEnabled) {
+                    tooltip.appendMarkdown('> ℹ️ Usage-based pricing is currently disabled\n\n');
+                }
+                
+                // Show usage details regardless of enabled/disabled status
+                const pricingLines = lines.filter(line => line.includes('*') && line.includes('➜'));
+                if (pricingLines.length > 0) {
+                    const costLine = lines.find(line => line.includes('Total Cost:'));
+                    const totalCost = costLine ? costLine.split('Total Cost:')[1].trim() : '';
+                    
+                    tooltip.appendMarkdown(`**Current Usage** (Total: ${totalCost}):\n\n`);
+                    pricingLines.forEach(line => {
+                        const [calc, cost] = line.split('➜').map(part => part.trim());
+                        tooltip.appendMarkdown(`• ${calc.replace('•', '').trim()} → ${cost}\n\n`);
+                    });
+                } else {
+                    tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
+                }
+            } catch (error: any) {
+                log('[API] Error fetching limit for tooltip: ' + error.message, true);
+                tooltip.appendMarkdown('> ⚠️ Error checking usage-based pricing status\n\n');
+            }
+        } else {
+            tooltip.appendMarkdown('> ⚠️ Unable to check usage-based pricing status\n\n');
+        }
+    }
 
-		// Period and Last Updated in a table format
-		const periodLine = lines.find(line => line.includes('Period:'));
-		const updatedLine = lines.find(line => line.includes('Last Updated:'));
-		if (periodLine || updatedLine) {
-			tooltip.appendMarkdown('---\n\n');
-			tooltip.appendMarkdown('<div align="center">\n\n');
-			if (periodLine && updatedLine) {
-				const period = periodLine.split(':')[1].trim();
-				const updatedTime = updatedLine.split(':').slice(1).join(':').trim();
-				tooltip.appendMarkdown(`📅 **Period:** ${period} • 🕒 **Updated:** ${formatRelativeTime(updatedTime)}\n\n`);
-			} else {
-				if (periodLine) {
-					tooltip.appendMarkdown(`📅 **Period:** ${periodLine.split(':')[1].trim()}\n\n`);
-				}
-				if (updatedLine) {
-					const updatedTime = updatedLine.split(':').slice(1).join(':').trim();
-					tooltip.appendMarkdown(`🕒 **Updated:** ${formatRelativeTime(updatedTime)}\n\n`);
-				}
-			}
-			tooltip.appendMarkdown('</div>\n\n');
-		}
-	}
+    // Action Buttons Section with new compact design
+    tooltip.appendMarkdown('---\n\n');
+    tooltip.appendMarkdown('<div align="center">\n\n');
+    
+    // First row: Account and Extension settings
+    tooltip.appendMarkdown('🌐 [Account Settings](https://www.cursor.com/dashboard) • ');
+    tooltip.appendMarkdown('⚙️ [Extension Settings](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats%22)\n\n');
+    
+    // Second row: Usage Based Pricing, Refresh, and Last Updated
+    const updatedLine = lines.find(line => line.includes('Last Updated:'));
+    const updatedTime = updatedLine ? formatRelativeTime(updatedLine.split(':').slice(1).join(':').trim()) : new Date().toLocaleTimeString();
+    
+    tooltip.appendMarkdown('💰 [Usage Based Pricing](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats.usageBasedPricing%22) • ');
+    tooltip.appendMarkdown('🔄 [Refresh](command:cursor-stats.refreshStats) • ');
+    tooltip.appendMarkdown(`🕒 ${updatedTime}\n\n`);
+    
+    tooltip.appendMarkdown('</div>');
 
-	// Action Buttons Section with consistent center alignment
-	tooltip.appendMarkdown('---\n\n');
-	tooltip.appendMarkdown('<div align="center">\n\n');
-	tooltip.appendMarkdown('🔄 [Refresh](command:cursor-stats.refreshStats) • ');
-	tooltip.appendMarkdown('⚙️ [Settings](command:cursor-stats.openSettings) • ');
-	tooltip.appendMarkdown('💰 [Usage Based Pricing](command:cursor-stats.setLimit)\n\n');
-	tooltip.appendMarkdown('</div>');
-
-	return tooltip;
+    return tooltip;
 }
 
 export function getStatusBarColor(percentage: number): vscode.ThemeColor {
