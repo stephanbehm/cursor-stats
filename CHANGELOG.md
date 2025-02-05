@@ -17,10 +17,6 @@ All notable changes to the "cursor-stats" extension will be documented in this f
 - Smart notification system:
   - Configurable usage threshold alerts (75%, 90%, 100%)
   - In-IDE notifications for quota management
-- Dynamic status bar improvements:
-  - Usage-based color theming
-  - Visual status indicators
-  - Custom color scheme support
 
 ## [1.0.4] - 2025-02-02
 
@@ -38,6 +34,10 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Moved Total Cost to Current Usage line
   - Centered section titles
   - Added action buttons section
+- Dynamic status bar improvements:
+  - Usage-based color theming
+  - Visual status indicators
+  - Custom color scheme support
 
 ### Changed
 - Enhanced error handling for database connections

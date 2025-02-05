@@ -2,27 +2,31 @@ import * as sqlite3 from 'sqlite3';
 import * as path from 'path';
 import * as os from 'os';
 import * as jwt from 'jsonwebtoken';
+import * as vscode from 'vscode';
 import { SQLiteRow, SQLiteError, TimingInfo, ComposerData } from '../interfaces/types';
 import { log } from '../utils/logger';
 
 let dbConnection: sqlite3.Database | null = null;
 
 export function getCursorDBPath(): string {
+    const appName = vscode.env.appName;
+    const folderName = appName === 'Cursor Nightly' ? 'Cursor Nightly' : 'Cursor';
+    
     if (process.platform === 'win32') {
-        return path.join(process.env.APPDATA || '', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+        return path.join(process.env.APPDATA || '', folderName, 'User', 'globalStorage', 'state.vscdb');
     } else if (process.platform === 'linux') {
         const isWSL = process.env.WSL_DISTRO_NAME || process.env.IS_WSL;
         if (isWSL) {
             const windowsUsername = process.env.WIN_USER || process.env.USERNAME || '';
             if (windowsUsername) {
-                return path.join('/mnt/c/Users', windowsUsername, 'AppData/Roaming/Cursor/User/globalStorage/state.vscdb');
+                return path.join('/mnt/c/Users', windowsUsername, 'AppData/Roaming', folderName, 'User/globalStorage/state.vscdb');
             }
         }
-        return path.join(os.homedir(), '.config', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+        return path.join(os.homedir(), '.config', folderName, 'User', 'globalStorage', 'state.vscdb');
     } else if (process.platform === 'darwin') {
-        return path.join(os.homedir(), 'Library', 'Application Support', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+        return path.join(os.homedir(), 'Library', 'Application Support', folderName, 'User', 'globalStorage', 'state.vscdb');
     }
-    return path.join(os.homedir(), '.config', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+    return path.join(os.homedir(), '.config', folderName, 'User', 'globalStorage', 'state.vscdb');
 }
 
 export async function getCursorTokenFromDB(): Promise<string | undefined> {

@@ -7,6 +7,7 @@ import { createMarkdownTooltip, createSeparator, createStatusBarItem, formatTool
 import { initializeLogging, log } from './utils/logger';
 import { getCursorTokenFromDB, initializeDatabase, closeDatabase, findNewestTimingInfo } from './services/database';
 import { checkUsageBasedStatus, getCurrentUsageLimit, setUsageLimit, fetchCursorStats } from './services/api';
+import { checkAndNotifyUsage, resetNotifications } from './handlers/notifications';
 
 let statusBarItem: vscode.StatusBarItem;
 let updateInterval: NodeJS.Timeout;
@@ -25,6 +26,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		log('[Initialization] Extension activation started');
 		extensionContext = context;
+
+		// Reset notifications on activation
+		resetNotifications();
 
 		// Create status bar item with enhanced logging
 		statusBarItem = createStatusBarItem();
@@ -330,6 +334,23 @@ async function updateStats() {
 			...contentLines.slice(1)
 		];
 
+		// Update usage based percent for notifications
+		usageBasedPercent = usageStatus.isEnabled ? usageBasedPercent : 0;
+		
+		// Check thresholds for the active pricing model
+		if (usageStatus.isEnabled) {
+			await checkAndNotifyUsage({
+				percentage: usageBasedPercent,
+				type: 'usage-based',
+				limit: usageStatus.limit
+			});
+		} else {
+			await checkAndNotifyUsage({
+				percentage: premiumPercent,
+				type: 'premium'
+			});
+		}
+
 		log('[Status Bar] Updating status bar with new stats...');
 		statusBarItem.text = `$(graph) ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
 		statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines);
@@ -384,7 +405,7 @@ async function monitorDatabase() {
 	try {
 		const currentTime = new Date().toISOString();
 		log(`[DB Check] Checking database at ${currentTime}`);
-		
+		log(`[DB Check] Checking database at ${currentTime}`);
 		const timing = await findNewestTimingInfo();
 		
 		if (!timing) {

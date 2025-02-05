@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.4-beta.2",
+  "version": "1.0.5-beta.1",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -63,6 +63,21 @@
           "type": "boolean",
           "default": true,
           "description": "Enable colored status bar based on usage percentage"
+        },
+        "cursorStats.enableAlerts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable usage alert notifications"
+        },
+        "cursorStats.usageAlertThresholds": {
+          "type": "array",
+          "default": [75, 90, 100],
+          "description": "Percentage thresholds at which to show usage alerts",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
         }
       }
     }
