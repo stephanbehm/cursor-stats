@@ -84,6 +84,11 @@
           "default": 30,
           "minimum": 5,
           "description": "How often to refresh the stats (in seconds). Minimum 5 seconds."
+        },
+        "cursorStats.showTotalUsage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show total usage (included + usage-based) in the status bar"
         }
       }
     }

@@ -297,16 +297,37 @@ async function updateStats() {
         // Calculate usage percentages
         const premiumPercent = Math.round((stats.premiumRequests.current / stats.premiumRequests.limit) * 100);
         let usageBasedPercent = 0;
-        
+        let totalUsageText = '';
+        let totalRequests = stats.premiumRequests.current;
+
         if (stats.lastMonth.usageBasedPricing.length > 0) {
             const items = stats.lastMonth.usageBasedPricing;
             const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+            
+            // Calculate total requests from usage-based pricing
+            const usageBasedRequests = items.reduce((sum, item) => {
+                const match = item.calculation.match(/(\d+)\s*\*/);
+                return sum + (match ? parseInt(match[1]) : 0);
+            }, 0);
+            totalRequests += usageBasedRequests;
             
             if (usageStatus.isEnabled && usageStatus.limit) {
                 usageBasedPercent = (totalCost / usageStatus.limit) * 100;
             }
             
             costText = ` $(credit-card) $${totalCost.toFixed(2)}`;
+
+            // Calculate total usage text if enabled
+            const config = vscode.workspace.getConfiguration('cursorStats');
+            const showTotalUsage = config.get<boolean>('showTotalUsage', false);
+            
+            if (showTotalUsage) {
+                totalUsageText = ` (${totalRequests}/${stats.premiumRequests.limit} + $${totalCost.toFixed(2)})`;
+            } else {
+                totalUsageText = ` ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
+            }
+        } else {
+            totalUsageText = ` ${stats.premiumRequests.current}/${stats.premiumRequests.limit}`;
         }
 
         // Set status bar color based on usage type
@@ -392,7 +413,7 @@ async function updateStats() {
         usageBasedPercent = usageStatus.isEnabled ? usageBasedPercent : 0;
         
         log('[Status Bar] Updating status bar with new stats...');
-        statusBarItem.text = `$(graph) ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
+        statusBarItem.text = `$(graph)${totalUsageText}`;
         statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines);
         statusBarItem.show();
         log('[Status Bar] Status bar visibility updated after stats update');
