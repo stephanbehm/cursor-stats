@@ -3,16 +3,22 @@ export interface UsageItem {
     totalDollars: string;
 }
 
+export interface UsageBasedPricing {
+    items: UsageItem[];
+    hasUnpaidMidMonthInvoice: boolean;
+    midMonthPayment: number;
+}
+
 export interface CursorStats {
     currentMonth: {
         month: number;
         year: number;
-        usageBasedPricing: UsageItem[];
+        usageBasedPricing: UsageBasedPricing;
     };
     lastMonth: {
         month: number;
         year: number;
-        usageBasedPricing: UsageItem[];
+        usageBasedPricing: UsageBasedPricing;
     };
     premiumRequests: {
         current: number;

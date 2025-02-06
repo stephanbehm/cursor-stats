@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.5-beta.15",
+  "version": "1.0.6",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -57,22 +57,24 @@
         "cursorStats.enableLogging": {
           "type": "boolean",
           "default": false,
-          "description": "Enable detailed logging for debugging purposes"
+          "description": "Enable detailed logging for debugging purposes."
         },
         "cursorStats.enableStatusBarColors": {
           "type": "boolean",
           "default": true,
-          "description": "Enable colored status bar based on usage percentage"
+          "description": "Enable colored status bar based on usage percentage."
         },
+
         "cursorStats.enableAlerts": {
           "type": "boolean",
           "default": true,
-          "description": "Enable usage alert notifications"
+          "description": "Enable usage alert notifications."
         },
+
         "cursorStats.usageAlertThresholds": {
           "type": "array",
           "default": [75, 90, 100],
-          "description": "Percentage thresholds at which to show usage alerts",
+          "description": "Percentage thresholds at which to show usage alerts.",
           "items": {
             "type": "number",
             "minimum": 0,
@@ -85,10 +87,10 @@
           "minimum": 5,
           "description": "How often to refresh the stats (in seconds). Minimum 5 seconds."
         },
-        "cursorStats.showTotalUsage": {
+        "cursorStats.showTotalRequests": {
           "type": "boolean",
           "default": false,
-          "description": "Show total usage (included + usage-based) in the status bar"
+          "description": "Show total requests (fast requests + usage-based requests) in the status bar."
         }
       }
     }

@@ -14,20 +14,26 @@ export function createStatusBarItem(): vscode.StatusBarItem {
 }
 
 export function formatTooltipLine(text: string, maxWidth: number = 50): string {
-    if (text.length <= maxWidth) return text;
+    if (text.length <= maxWidth) {
+        return text;
+    }
     const words = text.split(' ');
     let lines = [];
     let currentLine = '';
 
     for (const word of words) {
         if ((currentLine + word).length > maxWidth) {
-            if (currentLine) lines.push(currentLine.trim());
+            if (currentLine) {
+                lines.push(currentLine.trim());
+            }
             currentLine = word;
         } else {
             currentLine += (currentLine ? ' ' : '') + word;
         }
     }
-    if (currentLine) lines.push(currentLine.trim());
+    if (currentLine) {
+        lines.push(currentLine.trim());
+    }
     return lines.join('\n   ');
 }
 
@@ -42,9 +48,15 @@ export function createSeparator(width: number): string {
 
 export function getUsageLimitEmoji(currentCost: number, limit: number): string {
     const percentage = (currentCost / limit) * 100;
-    if (percentage >= 90) return '🔴';
-    if (percentage >= 75) return '🟡';
-    if (percentage >= 50) return '🟢';
+    if (percentage >= 90) {
+        return '🔴';
+    }
+    if (percentage >= 75) {
+        return '🟡';
+    }
+    if (percentage >= 50) {
+        return '🟢';
+    }
     return '✅';
 }
 
@@ -132,6 +144,12 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                         const [calc, cost] = line.split('➜').map(part => part.trim());
                         tooltip.appendMarkdown(`• ${calc.replace('•', '').trim()} → ${cost}\n\n`);
                     });
+
+                    // Add mid-month payment message if it exists
+                    const midMonthPaymentLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
+                    if (midMonthPaymentLine) {
+                        tooltip.appendMarkdown(`> ${midMonthPaymentLine.trim()}\n\n`);
+                    }
                 } else {
                     tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
                 }
@@ -206,9 +224,15 @@ export function getStatusBarColor(percentage: number): vscode.ThemeColor {
 }
 
 export function getUsageEmoji(percentage: number): string {
-    if (percentage >= 90) return '🔴';
-    if (percentage >= 75) return '🟡';
-    if (percentage >= 50) return '🟢';
+    if (percentage >= 90) {
+        return '🔴';
+    }
+    if (percentage >= 75) {
+        return '🟡';
+    }
+    if (percentage >= 50) {
+        return '🟢';
+    }
     return '✅';
 }
 

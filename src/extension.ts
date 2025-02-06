@@ -5,7 +5,7 @@ import { checkForUpdates } from './services/github';
 import { createMarkdownTooltip, createSeparator, createStatusBarItem, formatTooltipLine, getMaxLineWidth, getStatusBarColor, getUsageEmoji } from './handlers/statusBar';
 import { initializeLogging, log } from './utils/logger';
 import { getCursorTokenFromDB } from './services/database';
-import { checkUsageBasedStatus, getCurrentUsageLimit, setUsageLimit, fetchCursorStats } from './services/api';
+import { checkUsageBasedStatus, getCurrentUsageLimit, setUsageLimit, fetchCursorStats, getStripeSessionUrl } from './services/api';
 import { checkAndNotifyUsage, resetNotifications } from './handlers/notifications';
 
 let statusBarItem: vscode.StatusBarItem;
@@ -13,6 +13,7 @@ let refreshInterval: NodeJS.Timeout;
 let extensionContext: vscode.ExtensionContext;
 let outputChannel: vscode.OutputChannel | undefined;
 let lastReleaseCheck: number = 0;
+let isWindowFocused: boolean = true; // Add focus state tracking
 const RELEASE_CHECK_INTERVAL = 1000 * 60 * 60; // Check every hour
 
 function getRefreshIntervalMs(): number {
@@ -27,10 +28,15 @@ function startRefreshInterval() {
         clearInterval(refreshInterval);
     }
     
-    // Start new interval
-    const intervalMs = getRefreshIntervalMs();
-    log(`[Refresh] Starting refresh interval: ${intervalMs}ms`);
-    refreshInterval = setInterval(updateStats, intervalMs);
+    // Only start interval if window is focused
+    if (isWindowFocused) {
+        // Start new interval
+        const intervalMs = getRefreshIntervalMs();
+        log(`[Refresh] Starting refresh interval: ${intervalMs}ms`);
+        refreshInterval = setInterval(updateStats, intervalMs);
+    } else {
+        log('[Refresh] Window not focused, refresh interval not started');
+    }
 }
 
 // This method is called when your extension is activated
@@ -47,6 +53,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // Create status bar item with enhanced logging
         statusBarItem = createStatusBarItem();
+
+        // Add window focus event listeners
+        const focusListener = vscode.window.onDidChangeWindowState(e => {
+            isWindowFocused = e.focused;
+            log(`[Window] Window focus changed: ${isWindowFocused ? 'focused' : 'unfocused'}`);
+            
+            if (isWindowFocused) {
+                // Immediately update stats when window regains focus
+                updateStats();
+                // Restart the refresh interval
+                startRefreshInterval();
+            } else {
+                // Clear interval when window loses focus
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    log('[Refresh] Cleared refresh interval due to window losing focus');
+                }
+            }
+        });
 
         // Check initial usage-based status
         const token = await getCursorTokenFromDB();
@@ -95,8 +120,13 @@ export async function activate(context: vscode.ExtensionContext) {
                 log('[Settings] Refresh interval changed, restarting timer...');
                 startRefreshInterval();
             }
+            if (e.affectsConfiguration('cursorStats.showTotalRequests')) {
+                log('[Settings] Show total requests setting changed, updating display...');
+                await updateStats();
+            }
         });
         
+
         const setLimitCommand = vscode.commands.registerCommand('cursor-stats.setLimit', async () => {
             const token = await getCursorTokenFromDB();
             if (!token) {
@@ -128,7 +158,9 @@ export async function activate(context: vscode.ExtensionContext) {
                     placeHolder: `Current status: ${isEnabled ? 'Enabled' : 'Disabled'} ${isEnabled ? `(Limit: $${currentLimit.hardLimit})` : ''}`
                 });
 
-                if (!quickPick) return;
+                if (!quickPick) {
+                    return;
+                }
 
                 switch (quickPick.value) {
                     case 'enable':
@@ -196,7 +228,8 @@ export async function activate(context: vscode.ExtensionContext) {
             openCursorSettings, 
             refreshCommand, 
             setLimitCommand,
-            configListener
+            configListener,
+            focusListener  // Add focus listener to subscriptions
         );
         log('[Initialization] Subscriptions registered');
         
@@ -300,8 +333,8 @@ async function updateStats() {
         let totalUsageText = '';
         let totalRequests = stats.premiumRequests.current;
 
-        if (stats.lastMonth.usageBasedPricing.length > 0) {
-            const items = stats.lastMonth.usageBasedPricing;
+        if (stats.lastMonth.usageBasedPricing.items.length > 0) {
+            const items = stats.lastMonth.usageBasedPricing.items;
             const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
             
             // Calculate total requests from usage-based pricing
@@ -319,10 +352,10 @@ async function updateStats() {
 
             // Calculate total usage text if enabled
             const config = vscode.workspace.getConfiguration('cursorStats');
-            const showTotalUsage = config.get<boolean>('showTotalUsage', false);
+            const showTotalRequests = config.get<boolean>('showTotalRequests', false);
             
-            if (showTotalUsage) {
-                totalUsageText = ` (${totalRequests}/${stats.premiumRequests.limit} + $${totalCost.toFixed(2)})`;
+            if (showTotalRequests) {
+                totalUsageText = ` ${totalRequests}/${stats.premiumRequests.limit}${costText}`;
             } else {
                 totalUsageText = ` ${stats.premiumRequests.current}/${stats.premiumRequests.limit}${costText}`;
             }
@@ -362,12 +395,13 @@ async function updateStats() {
             '📈 Usage-Based Pricing'
         );
         
-        if (stats.lastMonth.usageBasedPricing.length > 0) {
-            const items = stats.lastMonth.usageBasedPricing;
-            const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+        if (stats.lastMonth.usageBasedPricing.items.length > 0) {
+            const items = stats.lastMonth.usageBasedPricing.items;
+            // Calculate total cost without including the mid-month payment in the sum
+            let totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
             
             // Calculate usage-based pricing period
-            const billingDay = 3; // Assuming it's the 3rd day
+            const billingDay = 3;
             const currentDate = new Date();
             let periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay);
             let periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, billingDay - 1);
@@ -386,11 +420,18 @@ async function updateStats() {
                 contentLines.push(formatTooltipLine(`   • ${item.calculation} ➜ ${item.totalDollars}`));
             }
             
+            if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+                contentLines.push(
+                    '',
+                    formatTooltipLine(`ℹ️ You have paid $${stats.lastMonth.usageBasedPricing.midMonthPayment.toFixed(2)} of this cost already`)
+                );
+            }
+
             contentLines.push(
                 '',
-                formatTooltipLine(`💳 Total Cost: $${totalCost.toFixed(2)}`)
+                formatTooltipLine(`💳 Total Cost: $${totalCost.toFixed(2)}`)  
             );
-            
+
             costText = ` $(credit-card) $${totalCost.toFixed(2)}`;
         } else {
             contentLines.push('   ℹ️ No usage data for last month');
@@ -427,6 +468,21 @@ async function updateStats() {
                     type: 'usage-based',
                     limit: usageStatus.limit
                 });
+
+                if (stats.lastMonth.usageBasedPricing.hasUnpaidMidMonthInvoice) {
+                    vscode.window.showWarningMessage('⚠️ You have an unpaid mid-month invoice. Please pay it to continue using usage-based pricing.', 'Open Billing Page')
+                        .then(async selection => {
+                            if (selection === 'Open Billing Page') {
+                                try {
+                                    const stripeUrl = await getStripeSessionUrl(token);
+                                    vscode.env.openExternal(vscode.Uri.parse(stripeUrl));
+                                } catch (error) {
+                                    // Fallback to settings page if stripe URL fails
+                                    vscode.env.openExternal(vscode.Uri.parse('https://www.cursor.com/settings'));
+                                }
+                            }
+                        });
+                }
             }, 1000);
         } else {
             setTimeout(() => {

@@ -27,7 +27,12 @@ export function log(message: string, error: boolean = false): void {
                         message.includes('[API]') ||
                         message.includes('[GitHub]') ||
                         message.includes('[Panels]') ||
-                        message.includes('[Command]')
+                        message.includes('[Command]') ||
+                        message.includes('[Notifications]') ||
+                        message.includes('[Refresh]') ||
+                        message.includes('[Settings]') ||
+                        message.includes('[Critical]') ||
+                        message.includes('[Deactivation]')
                      ));
 
     if (shouldLog) {

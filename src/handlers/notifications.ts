@@ -35,59 +35,70 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
     try {
         isNotificationInProgress = true;
         const thresholds = config.get<number[]>('usageAlertThresholds', [75, 90, 100])
-            .sort((a, b) => a - b);
+            .sort((a, b) => b - a); // Sort in descending order to get highest threshold first
 
         const { percentage, type, limit } = usageInfo;
 
-        // Find the highest threshold that has been exceeded but not yet notified
-        const exceededThreshold = thresholds
-            .reverse()
-            .find(threshold => percentage >= threshold && !notifiedThresholds.has(threshold));
-
-        if (exceededThreshold) {
-            log(`[Notifications] Usage threshold ${exceededThreshold}% exceeded for ${type} usage`);
+        // Find the highest threshold that has been exceeded
+        const highestExceededThreshold = thresholds.find(threshold => percentage >= threshold);
+        
+        // Only notify if we haven't notified this threshold yet
+        if (highestExceededThreshold && !notifiedThresholds.has(highestExceededThreshold)) {
+            log(`[Notifications] Highest usage threshold ${highestExceededThreshold}% exceeded for ${type} usage`);
             
-            const message = type === 'premium' 
-                ? `Premium request usage has reached ${percentage.toFixed(1)}%`
-                : `Usage-based spending has reached ${percentage.toFixed(1)}% of your $${limit} limit`;
+            let message, detail;
+            if (type === 'premium') {
+                message = `Premium request usage has reached ${percentage.toFixed(1)}%`;
+                if (percentage > 100) {
+                    message = `Premium request usage has exceeded limit (${percentage.toFixed(1)}%)`;
+                    detail = 'Enable usage-based pricing to continue using premium models.';
+                } else {
+                    detail = 'Click View Settings to manage your usage limits.';
+                }
+            } else {
+                message = `Usage-based spending has reached ${percentage.toFixed(1)}% of your $${limit} limit`;
+                detail = 'Click Manage Limit to adjust your usage-based pricing settings.';
+            }
 
-            // Use a modal notification to avoid interfering with status bar visibility
+            // Show the notification
             const notification = await vscode.window.showWarningMessage(
                 message,
-                { modal: false, detail: 'Click View Settings to manage your usage limits.' },
-                'View Settings',
+                { modal: false, detail },
+                type === 'premium' && percentage > 100 ? 'Enable Usage-Based' : type === 'premium' ? 'View Settings' : 'Manage Limit',
                 'Dismiss'
             );
 
             if (notification === 'View Settings') {
                 try {
-                    // Try to open settings directly first
                     await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:Dwtexe.cursor-stats');
                 } catch (error) {
                     log('[Notifications] Failed to open settings directly, trying alternative method...', true);
                     try {
-                        // Fallback to opening settings view
                         await vscode.commands.executeCommand('workbench.action.openSettings');
-                        // Then search for our extension
                         await vscode.commands.executeCommand('workbench.action.search.toggleQueryDetails');
                         await vscode.commands.executeCommand('workbench.action.search.action.replaceAll', '@ext:Dwtexe.cursor-stats');
                     } catch (fallbackError) {
                         log('[Notifications] Failed to open settings with fallback method', true);
-                        // Show error message to user
                         vscode.window.showErrorMessage('Failed to open Cursor Stats settings. Please try opening VS Code settings manually.');
                     }
                 }
+            } else if (notification === 'Manage Limit' || notification === 'Enable Usage-Based') {
+                await vscode.commands.executeCommand('cursor-stats.setLimit');
             }
 
-            notifiedThresholds.add(exceededThreshold);
+            // Mark all thresholds up to and including the current one as notified
+            thresholds.forEach(threshold => {
+                if (threshold <= highestExceededThreshold) {
+                    notifiedThresholds.add(threshold);
+                }
+            });
         }
 
         // Clear notifications for thresholds that are no longer exceeded
-        // This allows re-notification if usage goes above threshold again
         for (const threshold of notifiedThresholds) {
             if (percentage < threshold) {
                 notifiedThresholds.delete(threshold);
-                log(`[Notifications] Cleared notification for threshold ${threshold}%`);
+                log(`[Notifications] Cleared notification for threshold ${threshold}% as usage dropped below it`);
             }
         }
     } finally {

@@ -15,6 +15,32 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.0.6] - 2025-02-06
+
+### Added
+
+- Window focus-aware refresh intervals
+- Mid-month payment tracking and notifications
+- Stripe integration for unpaid invoice handling
+- New "Show Total Requests" configuration option
+- Additional logging categories for debugging
+- Unpaid invoice warnings with billing portal integration
+
+### Changed
+
+- Improved notification sorting logic (highest thresholds first)
+- Refactored usage-based pricing data structure
+- Enhanced status bar tooltip formatting
+- Updated payment period calculations to exclude mid-month payments
+- Modified status bar text display for total requests
+
+### Fixed
+
+- Notification clearing logic when usage drops below thresholds
+- Window focus change handling during updates
+- Error handling for Stripe session URL retrieval
+- Configuration change detection for total requests display
+
 ## [1.0.5-beta.15] - 2025-02-6
 
 ### Added

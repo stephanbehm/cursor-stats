@@ -8,22 +8,27 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 - 📊 Premium request tracking with startOfMonth support
 - 💰 Usage-based pricing information with billing cycle awareness
 - 🔔 Smart notification system with configurable thresholds
+- 💳 Mid-month payment tracking and invoice notifications
+- 🔒 Stripe integration for billing portal access
+- 🖥️ Focus-aware updates (pauses when window minimized)
 - 🎨 Customizable status bar display with optional colors
 - 📝 Detailed tooltips with usage statistics
+- 📈 Total request counter (fast + usage-based requests)
 - ⚡ Command palette integration
 - 🌙 Support for both regular and nightly Cursor versions
 - 🔄 GitHub release updates
-- 🖥️ WSL (Windows Subsystem for Linux) support
 
 ## Installation
 
 ### VS Code Marketplace
+
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
 3. Search for "Cursor Stats"
 4. Click Install
 
 ### Manual Installation
+
 1. Download the latest .vsix file from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
 2. Open VS Code
 3. Press Ctrl+Shift+P
@@ -31,6 +36,7 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 5. Choose the downloaded file
 
 ## Requirements
+
 - VS Code ^1.85.0
 - Windows OS (WSL supported)
 - Cursor IDE installed
@@ -63,14 +69,11 @@ The extension can be configured through VS Code settings:
 - `cursorStats.enableLogging`: Enable detailed logging for debugging
 - `cursorStats.enableStatusBarColors`: Toggle colored status bar based on usage
 - `cursorStats.enableAlerts`: Enable usage alert notifications
+- `cursorStats.showTotalRequests`: Display total requests instead of current usage
 - `cursorStats.usageAlertThresholds`: Configure percentage thresholds for alerts
-
-## Development
-
-1. Clone the repository
-2. Run `npm install` to install dependencies
-3. Open the project in VS Code
-4. Press F5 to start debugging
+- `cursorStats.refreshInterval`: Set update frequency
+r alerts
+ebugging
 
 ## Contributing
 

@@ -54,7 +54,7 @@ export async function checkUsageBasedStatus(token: string): Promise<{isEnabled: 
     }
 }
 
-async function fetchMonthData(token: string, month: number, year: number): Promise<UsageItem[]> {
+async function fetchMonthData(token: string, month: number, year: number): Promise<{ items: UsageItem[], hasUnpaidMidMonthInvoice: boolean, midMonthPayment: number }> {
     log(`[API] Fetching data for ${month}/${year}`);
     try {
         const response = await axios.post('https://www.cursor.com/api/dashboard/get-monthly-invoice', {
@@ -69,16 +69,27 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
         log('[API] Monthly invoice response: ' + JSON.stringify({
             status: response.status,
             hasItems: !!response.data.items,
-            itemCount: response.data.items?.length
+            itemCount: response.data.items?.length,
+            hasUnpaidInvoice: response.data.hasUnpaidMidMonthInvoice
         }));
 
         const usageItems: UsageItem[] = [];
+        let midMonthPayment = 0;
         if (response.data.items) {
             for (const item of response.data.items) {
                 log('[API] Processing invoice item: ' + JSON.stringify({
                     description: item.description,
                     cents: item.cents
                 }));
+                
+                // Check if this is a mid-month payment
+                if (item.description.includes('Mid-month usage paid')) {
+                    // Add to the total mid-month payment amount (convert from cents to dollars)
+                    midMonthPayment += Math.abs(item.cents) / 100;
+                    log(`[API] Added mid-month payment of $${(Math.abs(item.cents) / 100).toFixed(2)}, total now: $${midMonthPayment.toFixed(2)}`);
+                    continue; // Skip adding this to usage items
+                }
+
                 const requestCount = parseInt(item.description.match(/(\d+)/)[1]);
                 const cents = item.cents;
                 const costPerRequest = cents / requestCount;
@@ -90,7 +101,12 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                 });
             }
         }
-        return usageItems;
+        
+        return {
+            items: usageItems,
+            hasUnpaidMidMonthInvoice: response.data.hasUnpaidMidMonthInvoice || false,
+            midMonthPayment
+        };
     } catch (error: any) {
         const axiosError = error as ExtendedAxiosError;
         log(`[API] Error fetching monthly data for ${month}/${year}: ${axiosError.message}`, true);
@@ -149,16 +165,19 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
         const usageBasedLastMonth = usageBasedCurrentMonth === 1 ? 12 : usageBasedCurrentMonth - 1;
         const usageBasedLastYear = usageBasedCurrentMonth === 1 ? usageBasedCurrentYear - 1 : usageBasedCurrentYear;
 
+        const currentMonthData = await fetchMonthData(token, usageBasedCurrentMonth, usageBasedCurrentYear);
+        const lastMonthData = await fetchMonthData(token, usageBasedLastMonth, usageBasedLastYear);
+
         return {
             currentMonth: {
                 month: usageBasedCurrentMonth,
                 year: usageBasedCurrentYear,
-                usageBasedPricing: await fetchMonthData(token, usageBasedCurrentMonth, usageBasedCurrentYear)
+                usageBasedPricing: currentMonthData
             },
             lastMonth: {
                 month: usageBasedLastMonth,
                 year: usageBasedLastYear,
-                usageBasedPricing: await fetchMonthData(token, usageBasedLastMonth, usageBasedLastYear)
+                usageBasedPricing: lastMonthData
             },
             premiumRequests: {
                 current: premiumResponse.data['gpt-4'].numRequests,
@@ -173,6 +192,21 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
             data: error.response?.data,
             message: error.message
         }), true);
+        throw error;
+    }
+}
+
+export async function getStripeSessionUrl(token: string): Promise<string> {
+    try {
+        const response = await axios.get('https://www.cursor.com/api/stripeSession', {
+            headers: {
+                Cookie: `WorkosCursorSessionToken=${token}`
+            }
+        });
+        // Remove quotes from the response string
+        return response.data.replace(/"/g, '');
+    } catch (error: any) {
+        log('[API] Error getting Stripe session URL: ' + error.message, true);
         throw error;
     }
 } 
