@@ -22,11 +22,12 @@ export function log(message: string, error: boolean = false): void {
                         message.includes('[Initialization]') || 
                         message.includes('[Status Bar]') ||
                         message.includes('[Database]') ||
-                        message.includes('[DB Check]') ||
                         message.includes('[Auth]') ||
                         message.includes('[Stats]') ||
                         message.includes('[API]') ||
-                        message.includes('[GitHub]')
+                        message.includes('[GitHub]') ||
+                        message.includes('[Panels]') ||
+                        message.includes('[Command]')
                      ));
 
     if (shouldLog) {

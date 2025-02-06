@@ -84,12 +84,12 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
             const startOfMonthLine = lines.find(line => line.includes('Fast Requests Period:'));
             
             if (requestLine) {
+                if (startOfMonthLine) {
+                    tooltip.appendMarkdown(`**Period:** ${startOfMonthLine.split(':')[1].trim()}\n\n`);
+                }
                 tooltip.appendMarkdown(`**Usage:** ${requestLine.split('•')[1].trim()}\n\n`);
                 if (percentLine) {
                     tooltip.appendMarkdown(`**Progress:** ${percentLine.split('📊')[1].trim()}\n\n`);
-                }
-                if (startOfMonthLine) {
-                    tooltip.appendMarkdown(`**Period:** ${startOfMonthLine.split(':')[1].trim()}\n\n`);
                 }
             }
         }
@@ -111,12 +111,12 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                 tooltip.appendMarkdown('</div>\n\n');
                 
                 if (isEnabled && limitResponse.hardLimit) {
-                    const usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
-                    const usageEmoji = getUsageLimitEmoji(totalCost, limitResponse.hardLimit);
-                    tooltip.appendMarkdown(`**Monthly Limit:** $${limitResponse.hardLimit.toFixed(2)} (${usagePercentage}% used) ${usageEmoji}\n\n`);
                     if (usageBasedPeriodLine) {
                         tooltip.appendMarkdown(`**Period:** ${usageBasedPeriodLine.split(':')[1].trim()}\n\n`);
                     }
+                    const usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
+                    const usageEmoji = getUsageLimitEmoji(totalCost, limitResponse.hardLimit);
+                    tooltip.appendMarkdown(`**Monthly Limit:** $${limitResponse.hardLimit.toFixed(2)} (${usagePercentage}% used) ${usageEmoji}\n\n`);
                 } else if (!isEnabled) {
                     tooltip.appendMarkdown('> ℹ️ Usage-based pricing is currently disabled\n\n');
                 }

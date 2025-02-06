@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.5-beta.3",
+  "version": "1.0.5-beta.15",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -78,6 +78,12 @@
             "minimum": 0,
             "maximum": 100
           }
+        },
+        "cursorStats.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "description": "How often to refresh the stats (in seconds). Minimum 5 seconds."
         }
       }
     }
@@ -88,8 +94,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test",
-    "postinstall": "node scripts/postinstall.js"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.8",
@@ -100,6 +105,7 @@
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
+    "@types/sql.js": "^1.4.9",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
@@ -107,6 +113,6 @@
     "axios": "^1.6.2",
     "jsonwebtoken": "^9.0.2",
     "semver": "^7.5.4",
-    "sqlite3": "^5.1.7"
+    "sql.js": "^1.12.0"
   }
 }
