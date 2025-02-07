@@ -10,6 +10,10 @@ All notable changes to the "cursor-stats" extension will be documented in this f
 - Visual analytics with graphs for historical request usage
 - Project-specific request usage monitoring
 - Dedicated activity bar section for enhanced statistics view
+- Smart API error handling with exponential backoff
+  - Automatic retry reduction during API outages
+  - Intelligent refresh rate adjustment
+  - User-friendly error notifications
 - Customization features:
   - Configurable quota display options
   - Hide/show specific model statistics

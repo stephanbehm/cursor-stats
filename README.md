@@ -18,6 +18,23 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 - 🌙 Support for both regular and nightly Cursor versions
 - 🔄 GitHub release updates
 
+## Upcoming Features
+
+Stay tuned for these exciting new features coming soon:
+
+- 📊 Session based request tracking
+- 📈 Visual analytics with graphs for historical request usage
+- 🎯 Project-specific request usage monitoring
+- 🎨 Dedicated activity bar section for enhanced statistics view
+- 🔄 Smart API error handling:
+  - Automatic retry reduction during outages
+  - Intelligent refresh rate adjustment
+  - User-friendly error notifications
+- ⚙️ Enhanced customization features:
+  - Configurable quota display options
+  - Hide/show specific model statistics
+  - Customizable status bar information
+
 ## Installation
 
 ### VS Code Marketplace
