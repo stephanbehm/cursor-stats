@@ -62,6 +62,8 @@ node_modules/**/.github/**
 node_modules/**/.git/**
 node_modules/**/bench/**
 node_modules/**/benchmark/**
+node_modules/@types/
+node_modules/typescript/
 
 # Keep only the necessary image
 images/**/*.?(png|gif|jpg|jpeg|webp)

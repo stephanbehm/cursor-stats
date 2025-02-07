@@ -76,6 +76,17 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
         const usageItems: UsageItem[] = [];
         let midMonthPayment = 0;
         if (response.data.items) {
+            // First pass: find the maximum request count
+            let maxRequestCount = 0;
+            for (const item of response.data.items) {
+                if (!item.description.includes('Mid-month usage paid')) {
+                    const requestCount = parseInt(item.description.match(/(\d+)/)[1]);
+                    maxRequestCount = Math.max(maxRequestCount, requestCount);
+                }
+            }
+            // Calculate the padding width based on the maximum request count
+            const paddingWidth = maxRequestCount.toString().length;
+
             for (const item of response.data.items) {
                 log('[API] Processing invoice item: ' + JSON.stringify({
                     description: item.description,
@@ -95,8 +106,13 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                 const costPerRequest = cents / requestCount;
                 const dollars = cents / 100;
 
+                // Pad request count based on the maximum width
+                const paddedRequestCount = requestCount.toString().padStart(paddingWidth, '0');
+                // Format cost per request in dollars
+                const costPerRequestDollars = (costPerRequest / 100).toFixed(2);
+
                 usageItems.push({
-                    calculation: `${requestCount}*${Math.floor(costPerRequest)}`,
+                    calculation: `${paddedRequestCount}*$${costPerRequestDollars}`,
                     totalDollars: `$${dollars.toFixed(2)}`
                 });
             }

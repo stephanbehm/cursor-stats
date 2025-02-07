@@ -138,15 +138,25 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                 if (pricingLines.length > 0) {
                     const costLine = lines.find(line => line.includes('Total Cost:'));
                     const totalCost = costLine ? costLine.split('Total Cost:')[1].trim() : '';
+                    const midMonthPaymentLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
+                    const midMonthPayment = midMonthPaymentLine ? 
+                        (midMonthPaymentLine.match(/\$(\d+\.\d+)/) || [])[1] ? 
+                        parseFloat((midMonthPaymentLine.match(/\$(\d+\.\d+)/) || [])[1]) : 0 
+                        : 0;
+                    const unpaidAmount = parseFloat(totalCost.replace('$', '')) - midMonthPayment;
                     
-                    tooltip.appendMarkdown(`**Current Usage** (Total: ${totalCost}):\n\n`);
+                    if (midMonthPayment > 0) {
+                        tooltip.appendMarkdown(`**Current Usage** (Total: $${parseFloat(totalCost.replace('$', '')).toFixed(2)} - Unpaid: $${unpaidAmount.toFixed(2)}):\n\n`);
+                    } else {
+                        tooltip.appendMarkdown(`**Current Usage** (Total: ${totalCost}):\n\n`);
+                    }
+                    
                     pricingLines.forEach(line => {
                         const [calc, cost] = line.split('➜').map(part => part.trim());
                         tooltip.appendMarkdown(`• ${calc.replace('•', '').trim()} → ${cost}\n\n`);
                     });
 
                     // Add mid-month payment message if it exists
-                    const midMonthPaymentLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
                     if (midMonthPaymentLine) {
                         tooltip.appendMarkdown(`> ${midMonthPaymentLine.trim()}\n\n`);
                     }

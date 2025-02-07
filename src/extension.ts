@@ -416,6 +416,22 @@ async function updateStats() {
                 formatTooltipLine(`   Usage Based Period: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
             );
             
+            // Add total cost header with unpaid amount if there's a mid-month payment
+            const totalCostBeforeMidMonth = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+            const unpaidAmount = totalCostBeforeMidMonth - stats.lastMonth.usageBasedPricing.midMonthPayment;
+            
+            if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+                contentLines.push(
+                    formatTooltipLine(`   Current Usage (Total: $${totalCostBeforeMidMonth.toFixed(2)} - Unpaid: $${unpaidAmount.toFixed(2)})`),
+                    ''
+                );
+            } else {
+                contentLines.push(
+                    formatTooltipLine(`   Current Usage (Total: $${totalCostBeforeMidMonth.toFixed(2)})`),
+                    ''
+                );
+            }
+            
             for (const item of items) {
                 contentLines.push(formatTooltipLine(`   • ${item.calculation} ➜ ${item.totalDollars}`));
             }
@@ -429,10 +445,10 @@ async function updateStats() {
 
             contentLines.push(
                 '',
-                formatTooltipLine(`💳 Total Cost: $${totalCost.toFixed(2)}`)  
+                formatTooltipLine(`💳 Total Cost: $${totalCostBeforeMidMonth.toFixed(2)}`)  // Changed to use totalCostBeforeMidMonth
             );
 
-            costText = ` $(credit-card) $${totalCost.toFixed(2)}`;
+            costText = ` $(credit-card) $${totalCostBeforeMidMonth.toFixed(2)}`;
         } else {
             contentLines.push('   ℹ️ No usage data for last month');
         }
