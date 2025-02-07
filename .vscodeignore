@@ -71,3 +71,5 @@ images/**/*.?(png|gif|jpg|jpeg|webp)
 
 # Exclude any VSIX files
 **/*.vsix
+
+*.ps1

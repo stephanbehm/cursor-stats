@@ -19,6 +19,25 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.0.7] - 2025-02-07
+
+### Added
+- Comprehensive GitHub release notes viewer with markdown support
+- Enhanced release check functionality with detailed release information
+- Support for release assets and source code download links
+- Integrated marked library for markdown rendering
+- Improved WSL database path handling
+
+### Changed
+- Updated status bar color scheme for better visual consistency
+- Refactored Windows username utility into database service
+- Enhanced usage cost display formatting
+- Improved release information structure with additional metadata
+- Updated package dependencies to latest versions
+
+### Removed
+- Redundant Windows username utility module
+
 ## [1.0.6] - 2025-02-06
 
 ### Added

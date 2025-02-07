@@ -16,7 +16,7 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 - 📈 Total request counter (fast + usage-based requests)
 - ⚡ Command palette integration
 - 🌙 Support for both regular and nightly Cursor versions
-- 🔄 GitHub release updates
+- 🔄 Enhanced GitHub release updates with markdown support
 
 ## Upcoming Features
 
