@@ -35,6 +35,12 @@ Stay tuned for these exciting new features coming soon:
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## Images
+![resim](https://github.com/user-attachments/assets/dc50c52e-29e1-4e9d-b09f-66c5d0a6e4de)
+![resim](https://github.com/user-attachments/assets/b661dcce-7b74-49c7-866d-d29ad82058f7)
+![resim](https://github.com/user-attachments/assets/d20476ac-0cc9-4072-9040-8543b1c6c7d1)
+
+
 ## Installation
 
 ### VS Code Marketplace
