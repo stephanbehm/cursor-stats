@@ -5,17 +5,18 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import initSqlJs from 'sql.js';
 import { log } from '../utils/logger';
+import { getWindowsUsername } from '../utils/getWindowsUsername';
 
 export function getCursorDBPath(): string {
     const appName = vscode.env.appName;
     const folderName = appName === 'Cursor Nightly' ? 'Cursor Nightly' : 'Cursor';
-    
+
     if (process.platform === 'win32') {
         return path.join(process.env.APPDATA || '', folderName, 'User', 'globalStorage', 'state.vscdb');
     } else if (process.platform === 'linux') {
-        const isWSL = process.env.WSL_DISTRO_NAME || process.env.IS_WSL;
+        const isWSL = vscode.env.remoteName === 'wsl';
         if (isWSL) {
-            const windowsUsername = process.env.WIN_USER || process.env.USERNAME || '';
+            const windowsUsername = getWindowsUsername();
             if (windowsUsername) {
                 return path.join('/mnt/c/Users', windowsUsername, 'AppData/Roaming', folderName, 'User/globalStorage/state.vscdb');
             }
