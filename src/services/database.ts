@@ -5,7 +5,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import initSqlJs from 'sql.js';
 import { log } from '../utils/logger';
-import { getWindowsUsername } from '../utils/getWindowsUsername';
+import { execSync } from 'child_process';
+
 
 export function getCursorDBPath(): string {
     const appName = vscode.env.appName;
@@ -100,3 +101,14 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
         return undefined;
     }
 }
+export function getWindowsUsername(): string | undefined {
+    try {
+      // Executes cmd.exe and echoes the %USERNAME% variable
+      const result = execSync('cmd.exe /C "echo %USERNAME%"', { encoding: 'utf8' });
+      const username = result.trim();
+      return username || undefined;
+    } catch (error) {
+      console.error('Error getting Windows username:', error);
+      return undefined;
+    }
+  }

@@ -74,10 +74,15 @@ export interface UsageLimitResponse {
 export interface GitHubRelease {
     tag_name: string;
     name: string;
-    prerelease: boolean;
-    published_at: string;
-    html_url: string;
     body: string;
+    prerelease: boolean;
+    html_url: string;
+    zipball_url: string;
+    tarball_url: string;
+    assets: Array<{
+        name: string;
+        browser_download_url: string;
+    }>;
 }
 
 export interface ReleaseCheckResult {
@@ -87,6 +92,13 @@ export interface ReleaseCheckResult {
     isPrerelease: boolean;
     releaseUrl: string;
     releaseNotes: string;
+    releaseName: string;
+    zipballUrl: string;
+    tarballUrl: string;
+    assets: Array<{
+        name: string;
+        downloadUrl: string;
+    }>;
 }
 
 export interface CursorUsageResponse {

@@ -36,10 +36,19 @@ Stay tuned for these exciting new features coming soon:
   - Customizable status bar information
 
 ## Images
-![resim](https://github.com/user-attachments/assets/dc50c52e-29e1-4e9d-b09f-66c5d0a6e4de)
-![resim](https://github.com/user-attachments/assets/b661dcce-7b74-49c7-866d-d29ad82058f7)
-![resim](https://github.com/user-attachments/assets/d20476ac-0cc9-4072-9040-8543b1c6c7d1)
 
+<table>
+<tr>
+<td width="30%"><img src="https://github.com/user-attachments/assets/d20476ac-0cc9-4072-9040-8543b1c6c7d1" width="100%"/></td>
+<td width="30%"><img src="https://github.com/user-attachments/assets/dc50c52e-29e1-4e9d-b09f-66c5d0a6e4de" width="100%"/></td>
+<td width="30%"><img src="https://github.com/user-attachments/assets/b661dcce-7b74-49c7-866d-d29ad82058f7" width="100%"/></td>
+</tr>
+<tr>
+<td align="center"> UI </td>
+<td align="center"> UI </td>
+<td align="center"> Settings </td>
+</tr>
+</table>
 
 ## Installation
 

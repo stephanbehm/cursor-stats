@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.7-beta.3",
+  "version": "1.0.7",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -64,16 +64,18 @@
           "default": true,
           "description": "Enable colored status bar based on usage percentage."
         },
-
         "cursorStats.enableAlerts": {
           "type": "boolean",
           "default": true,
           "description": "Enable usage alert notifications."
         },
-
         "cursorStats.usageAlertThresholds": {
           "type": "array",
-          "default": [75, 90, 100],
+          "default": [
+            75,
+            90,
+            100
+          ],
           "description": "Percentage thresholds at which to show usage alerts.",
           "items": {
             "type": "number",
@@ -107,18 +109,19 @@
     "@types/jsonwebtoken": "^9.0.8",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/sql.js": "^1.4.9",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
-    "@types/sql.js": "^1.4.9",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
     "axios": "^1.6.2",
     "jsonwebtoken": "^9.0.2",
+    "marked": "^15.0.6",
     "semver": "^7.5.4",
     "sql.js": "^1.12.0"
   }

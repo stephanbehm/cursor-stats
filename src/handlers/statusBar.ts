@@ -213,7 +213,7 @@ export function getStatusBarColor(percentage: number): vscode.ThemeColor {
     } else if (percentage >= 75) {
         return new vscode.ThemeColor('charts.yellow');
     } else if (percentage >= 70) {
-        return new vscode.ThemeColor('notebookStatusRunningIcon.foreground');
+        return new vscode.ThemeColor('notificationsWarningIcon.foreground');
     } else if (percentage >= 65) {
         return new vscode.ThemeColor('charts.orange');
     } else if (percentage >= 60) {
