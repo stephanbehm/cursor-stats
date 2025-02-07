@@ -73,3 +73,6 @@ images/**/*.?(png|gif|jpg|jpeg|webp)
 **/*.vsix
 
 *.ps1
+
+# exclude any md files
+**/*.md
