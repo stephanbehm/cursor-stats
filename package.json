@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.8-beta.1",
+  "version": "1.0.8-beta.4",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -95,6 +95,13 @@
             "type": "boolean",
             "default": false,
             "description": "Show total requests (fast requests + usage-based requests) in the status bar.",
+            "scope": "window"
+          },
+          "cursorStats.spendingAlertThreshold": {
+            "type": "number",
+            "default": 1,
+            "minimum": 0,
+            "description": "Dollar amount threshold for spending notifications (0 to disable, any positive amount in dollars).",
             "scope": "window"
           }
         }

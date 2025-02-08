@@ -6,7 +6,7 @@ import { createMarkdownTooltip, createSeparator, createStatusBarItem, formatTool
 import { initializeLogging, log } from './utils/logger';
 import { getCursorTokenFromDB } from './services/database';
 import { checkUsageBasedStatus, getCurrentUsageLimit, setUsageLimit, fetchCursorStats, getStripeSessionUrl } from './services/api';
-import { checkAndNotifyUsage, resetNotifications } from './handlers/notifications';
+import { checkAndNotifyUsage, resetNotifications, checkAndNotifySpending } from './handlers/notifications';
 
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout;
@@ -445,10 +445,17 @@ async function updateStats() {
 
             contentLines.push(
                 '',
-                formatTooltipLine(`💳 Total Cost: $${totalCostBeforeMidMonth.toFixed(2)}`)  // Changed to use totalCostBeforeMidMonth
+                formatTooltipLine(`💳 Total Cost: $${totalCostBeforeMidMonth.toFixed(2)}`)
             );
 
             costText = ` $(credit-card) $${totalCostBeforeMidMonth.toFixed(2)}`;
+
+            // Add spending notification check
+            if (usageStatus.isEnabled) {
+                setTimeout(() => {
+                    checkAndNotifySpending(totalCostBeforeMidMonth);
+                }, 1000);
+            }
         } else {
             contentLines.push('   ℹ️ No usage data for last month');
         }

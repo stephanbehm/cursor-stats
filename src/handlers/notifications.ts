@@ -3,11 +3,13 @@ import { log } from '../utils/logger';
 
 // Track which thresholds have been notified in the current session
 const notifiedThresholds = new Set<number>();
+const notifiedSpendingThresholds = new Set<number>();
 let isNotificationInProgress = false;
 
 // Reset notification tracking
 export function resetNotifications() {
     notifiedThresholds.clear();
+    notifiedSpendingThresholds.clear();
     isNotificationInProgress = false;
     log('[Notifications] Reset notification tracking');
 }
@@ -16,6 +18,55 @@ interface UsageInfo {
     percentage: number;
     type: 'premium' | 'usage-based';
     limit?: number;
+    totalSpent?: number;
+}
+
+export async function checkAndNotifySpending(totalSpent: number) {
+    if (isNotificationInProgress) {
+        log('[Notifications] Notification already in progress, skipping spending check...');
+        return;
+    }
+
+    const config = vscode.workspace.getConfiguration('cursorStats');
+    const spendingThreshold = config.get<number>('spendingAlertThreshold', 1);
+    
+    // If threshold is 0, spending notifications are disabled
+    if (spendingThreshold <= 0) {
+        return;
+    }
+
+    try {
+        isNotificationInProgress = true;
+        
+        // Calculate the next threshold to notify about (starting from 1, not 0)
+        const currentThresholdMultiple = Math.floor(totalSpent / spendingThreshold);
+        const nextNotificationAmount = (currentThresholdMultiple + 1) * spendingThreshold;
+        
+        // Only notify if we've passed the next notification amount and haven't notified about it
+        if (totalSpent >= nextNotificationAmount && !notifiedSpendingThresholds.has(currentThresholdMultiple + 1)) {
+            log(`[Notifications] Spending threshold reached (Total spent: $${totalSpent.toFixed(2)}, Next notification at: $${nextNotificationAmount.toFixed(2)})`);
+            
+            const message = `Your Cursor usage spending has reached $${totalSpent.toFixed(2)}`;
+            const detail = `Next notification will be at $${(nextNotificationAmount + spendingThreshold).toFixed(2)}. Click Manage Limit to adjust your usage settings.`;
+
+            // Show the notification
+            const notification = await vscode.window.showInformationMessage(
+                message,
+                { modal: false, detail },
+                'Manage Limit',
+                'Dismiss'
+            );
+
+            if (notification === 'Manage Limit') {
+                await vscode.commands.executeCommand('cursor-stats.setLimit');
+            }
+
+            // Mark this threshold as notified
+            notifiedSpendingThresholds.add(currentThresholdMultiple + 1);
+        }
+    } finally {
+        isNotificationInProgress = false;
+    }
 }
 
 export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
