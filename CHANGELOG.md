@@ -19,6 +19,24 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.0.8] - 2025-02-08
+
+### Added
+- Spending alert notifications with configurable dollar thresholds
+- UI extension host compatibility for remote development
+- New `spendingAlertThreshold` configuration option
+- Multi-threshold alert system (6 default percentage thresholds)
+
+### Changed
+- Configuration structure now uses array-based format
+- Increased default refresh interval from 30 to 60 seconds
+- Raised minimum refresh interval from 5 to 10 seconds
+- Added "scope" property to all configuration settings
+- Updated notification sorting logic to handle more thresholds
+
+### Removed
+- Legacy VSIX package file from repository
+
 ## [1.0.7] - 2025-02-07
 
 ### Added

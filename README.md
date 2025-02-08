@@ -8,6 +8,7 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 - 📊 Premium request tracking with startOfMonth support
 - 💰 Usage-based pricing information with billing cycle awareness
 - 🔔 Smart notification system with configurable thresholds
+- 💸 Spending alerts with dollar amount thresholds
 - 💳 Mid-month payment tracking and invoice notifications
 - 🔒 Stripe integration for billing portal access
 - 🖥️ Focus-aware updates (pauses when window minimized)
@@ -59,19 +60,15 @@ Stay tuned for these exciting new features coming soon:
 3. Search for "Cursor Stats"
 4. Click Install
 
+- Or install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
+
 ### Manual Installation
 
 1. Download the latest .vsix file from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
-2. Open VS Code
-3. Press Ctrl+Shift+P
+2. Open Cursor
+3. Press Ctrl+Shift+P (Cmd+Shift+P on macOS)
 4. Type 'Install from VSIX' and select it
-5. Choose the downloaded file
-
-## Requirements
-
-- VS Code ^1.85.0
-- Windows OS (WSL supported)
-- Cursor IDE installed
+5. Choose the downloaded VSIX file
 
 ## Project Structure
 
@@ -104,8 +101,7 @@ The extension can be configured through VS Code settings:
 - `cursorStats.showTotalRequests`: Display total requests instead of current usage
 - `cursorStats.usageAlertThresholds`: Configure percentage thresholds for alerts
 - `cursorStats.refreshInterval`: Set update frequency
-r alerts
-ebugging
+- `cursorStats.spendingAlertThreshold`: Configure dollar amount thresholds for spending alerts
 
 ## Contributing
 
@@ -123,4 +119,4 @@ If you encounter any issues or have suggestions, please:
 
 ## License
 
-MIT
+[MIT](LICENSE)
