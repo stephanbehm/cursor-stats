@@ -34,7 +34,7 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
 
     try {
         isNotificationInProgress = true;
-        const thresholds = config.get<number[]>('usageAlertThresholds', [75, 90, 100])
+        const thresholds = config.get<number[]>('usageAlertThresholds', [10, 30, 50, 75, 90, 100])
             .sort((a, b) => b - a); // Sort in descending order to get highest threshold first
 
         const { percentage, type, limit } = usageInfo;

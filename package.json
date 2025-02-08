@@ -75,7 +75,7 @@
           },
           "cursorStats.usageAlertThresholds": {
             "type": "array",
-            "default": [75, 90, 100],
+            "default": [10, 30, 50, 75, 90, 100],
             "description": "Percentage thresholds at which to show usage alerts.",
             "items": {
               "type": "number",
@@ -86,9 +86,9 @@
           },
           "cursorStats.refreshInterval": {
             "type": "number",
-            "default": 30,
-            "minimum": 5,
-            "description": "How often to refresh the stats (in seconds). Minimum 5 seconds.",
+            "default": 60,
+            "minimum": 10,
+            "description": "How often to refresh the stats (in seconds). Minimum 10 seconds.",
             "scope": "window"
           },
           "cursorStats.showTotalRequests": {
