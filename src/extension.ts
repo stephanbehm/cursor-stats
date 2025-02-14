@@ -39,6 +39,14 @@ function startRefreshInterval() {
     }
 }
 
+// Add this new function
+export function getExtensionContext(): vscode.ExtensionContext {
+    if (!extensionContext) {
+        throw new Error('Extension context not initialized');
+    }
+    return extensionContext;
+}
+
 // This method is called when your extension is activated
 export async function activate(context: vscode.ExtensionContext) {
     try {
@@ -364,7 +372,9 @@ async function updateStats() {
         }
 
         // Set status bar color based on usage type
-        const usagePercent = usageStatus.isEnabled ? usageBasedPercent : premiumPercent;
+        // Always use premium percentage unless it's exhausted and usage-based is enabled
+        const usagePercent = premiumPercent < 100 ? premiumPercent : 
+                            (usageStatus.isEnabled ? usageBasedPercent : premiumPercent);
         statusBarItem.color = getStatusBarColor(usagePercent);
 
         // Build content first to determine width
@@ -486,11 +496,22 @@ async function updateStats() {
         // Show notifications after ensuring status bar is visible
         if (usageStatus.isEnabled) {
             setTimeout(() => {
+                // First check premium usage
+                const premiumPercent = Math.round((stats.premiumRequests.current / stats.premiumRequests.limit) * 100);
                 checkAndNotifyUsage({
-                    percentage: usageBasedPercent,
-                    type: 'usage-based',
-                    limit: usageStatus.limit
+                    percentage: premiumPercent,
+                    type: 'premium'
                 });
+
+                // Only check usage-based if premium is over limit
+                if (premiumPercent >= 100) {
+                    checkAndNotifyUsage({
+                        percentage: usageBasedPercent,
+                        type: 'usage-based',
+                        limit: usageStatus.limit,
+                        premiumPercentage: premiumPercent
+                    });
+                }
 
                 if (stats.lastMonth.usageBasedPricing.hasUnpaidMidMonthInvoice) {
                     vscode.window.showWarningMessage('⚠️ You have an unpaid mid-month invoice. Please pay it to continue using usage-based pricing.', 'Open Billing Page')

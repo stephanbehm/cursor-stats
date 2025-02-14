@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { CursorStats, UsageLimitResponse, ExtendedAxiosError, UsageItem, CursorUsageResponse } from '../interfaces/types';
 import { log } from '../utils/logger';
+import { checkTeamMembership, getTeamUsage, extractUserUsage } from './team';
+import { getExtensionContext } from '../extension';
 
 export async function getCurrentUsageLimit(token: string): Promise<UsageLimitResponse> {
     try {
@@ -146,21 +148,48 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
     const userId = token.split('%3A%3A')[0];
     log(`[API] Extracted userId for API calls: ${userId}`);
 
-    log('[API] Fetching premium requests info...');
     try {
-        const premiumResponse = await axios.get<CursorUsageResponse>('https://www.cursor.com/api/usage', {
-            params: { user: userId },
-            headers: {
-                Cookie: `WorkosCursorSessionToken=${token}`
-            }
-        });
-        log('[API] Premium response: ' + JSON.stringify({
-            status: premiumResponse.status,
-            hasGPT4: !!premiumResponse.data['gpt-4'],
-            numRequests: premiumResponse.data['gpt-4']?.numRequests,
-            maxRequests: premiumResponse.data['gpt-4']?.maxRequestUsage,
-            startOfMonth: premiumResponse.data.startOfMonth
-        }));
+        // Check if user is a team member
+        const context = getExtensionContext();
+        const teamInfo = await checkTeamMembership(token, context);
+        log(`[API] Team membership check result: ${JSON.stringify(teamInfo)}`);
+
+        let premiumRequests;
+        if (teamInfo.isTeamMember && teamInfo.teamId && teamInfo.userId) {
+            // Fetch team usage for team members
+            log('[API] Fetching team usage data...');
+            const teamUsage = await getTeamUsage(token);
+            const userUsage = extractUserUsage(teamUsage, teamInfo.userId);
+            
+            premiumRequests = {
+                current: userUsage.numRequests,
+                limit: userUsage.maxRequestUsage,
+                startOfMonth: teamInfo.startOfMonth
+            };
+            log('[API] Successfully extracted team member usage data');
+        } else {
+            // Fetch regular usage for non-team members
+            log('[API] Fetching regular premium usage data...');
+            const premiumResponse = await axios.get<CursorUsageResponse>('https://www.cursor.com/api/usage', {
+                params: { user: userId },
+                headers: {
+                    Cookie: `WorkosCursorSessionToken=${token}`
+                }
+            });
+            log('[API] Premium response: ' + JSON.stringify({
+                status: premiumResponse.status,
+                hasGPT4: !!premiumResponse.data['gpt-4'],
+                numRequests: premiumResponse.data['gpt-4']?.numRequests,
+                maxRequests: premiumResponse.data['gpt-4']?.maxRequestUsage,
+                startOfMonth: premiumResponse.data.startOfMonth
+            }));
+
+            premiumRequests = {
+                current: premiumResponse.data['gpt-4'].numRequests,
+                limit: premiumResponse.data['gpt-4'].maxRequestUsage,
+                startOfMonth: premiumResponse.data.startOfMonth
+            };
+        }
 
         // Get current date for usage-based pricing (which renews on 3rd/4th of each month)
         const currentDate = new Date();
@@ -195,11 +224,7 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
                 year: usageBasedLastYear,
                 usageBasedPricing: lastMonthData
             },
-            premiumRequests: {
-                current: premiumResponse.data['gpt-4'].numRequests,
-                limit: premiumResponse.data['gpt-4'].maxRequestUsage,
-                startOfMonth: premiumResponse.data.startOfMonth
-            }
+            premiumRequests
         };
     } catch (error: any) {
         log('[API] Error fetching premium requests: ' + error, true);

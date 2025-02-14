@@ -19,6 +19,7 @@ interface UsageInfo {
     type: 'premium' | 'usage-based';
     limit?: number;
     totalSpent?: number;
+    premiumPercentage?: number;
 }
 
 export async function checkAndNotifySpending(totalSpent: number) {
@@ -90,6 +91,12 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
 
         const { percentage, type, limit } = usageInfo;
 
+        // If this is a usage-based notification and premium is not over limit, skip it
+        if (type === 'usage-based' && usageInfo.premiumPercentage && usageInfo.premiumPercentage <= 100) {
+            log('[Notifications] Skipping usage-based notification as premium requests are not exhausted');
+            return;
+        }
+
         // Find the highest threshold that has been exceeded
         const highestExceededThreshold = thresholds.find(threshold => percentage >= threshold);
         
@@ -107,6 +114,7 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
                     detail = 'Click View Settings to manage your usage limits.';
                 }
             } else {
+                // Only show usage-based notifications if premium is exhausted
                 message = `Usage-based spending has reached ${percentage.toFixed(1)}% of your $${limit} limit`;
                 detail = 'Click Manage Limit to adjust your usage-based pricing settings.';
             }

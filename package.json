@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "Cursor Stats",
   "description": "A Cursor extension for monitoring usage.",
-  "version": "1.0.8",
+  "version": "1.0.9-beta.8",
   "publisher": "Dwtexe",
   "icon": "images/icon.png",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/Dwtexe/cursor-stats"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.96.0"
   },
   "categories": [
     "Other",

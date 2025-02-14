@@ -13,7 +13,7 @@ export function initializeLogging(context: vscode.ExtensionContext): void {
     }
 }
 
-export function log(message: string, error: boolean = false): void {
+export function log(message: string, data?: any, error: boolean = false): void {
     const config = vscode.workspace.getConfiguration('cursorStats');
     const loggingEnabled = config.get<boolean>('enableLogging', false);
     
@@ -32,18 +32,31 @@ export function log(message: string, error: boolean = false): void {
                         message.includes('[Refresh]') ||
                         message.includes('[Settings]') ||
                         message.includes('[Critical]') ||
-                        message.includes('[Deactivation]')
+                        message.includes('[Deactivation]') ||
+                        message.includes('[Team]')
                      ));
 
     if (shouldLog) {
-        safeLog(message, error);
+        safeLog(message, data, error);
     }
 }
 
-function safeLog(message: string, isError: boolean = false): void {
+function safeLog(message: string, data?: any, isError: boolean = false): void {
     const timestamp = new Date().toISOString();
     const logLevel = isError ? 'ERROR' : 'INFO';
-    const logMessage = `[${timestamp}] [${logLevel}] ${message}`;
+    let logMessage = `[${timestamp}] [${logLevel}] ${message}`;
+
+    // Add data if provided
+    if (data !== undefined) {
+        try {
+            const dataString = typeof data === 'object' ? 
+                '\n' + JSON.stringify(data, null, 2) : 
+                ' ' + data.toString();
+            logMessage += dataString;
+        } catch {
+            logMessage += ' [Error stringifying data]';
+        }
+    }
 
     // Always log to console
     if (isError) {
