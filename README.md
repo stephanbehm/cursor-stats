@@ -5,13 +5,15 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 ## Features
 
 - 🚀 Real-time monitoring of Cursor usage
+- 👥 Team usage tracking with per-user statistics
 - 📊 Premium request tracking with startOfMonth support
 - 💰 Usage-based pricing information with billing cycle awareness
+- 🔄 Smart cooldown and update mechanisms
 - 🔔 Smart notification system with configurable thresholds
 - 💸 Spending alerts with dollar amount thresholds
 - 💳 Mid-month payment tracking and invoice notifications
 - 🔒 Stripe integration for billing portal access
-- 🖥️ Focus-aware updates (pauses when window minimized)
+- 🖥️ Focus-aware updates with optimized performance
 - 🎨 Customizable status bar display with optional colors
 - 📝 Detailed tooltips with usage statistics
 - 📈 Total request counter (fast + usage-based requests)

@@ -19,6 +19,29 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.0.9] - 2025-02-15
+
+### Added
+- Team usage support with per-user statistics tracking
+- Enhanced cooldown mechanism for API request management
+- Improved window focus handling for better performance
+- Smart interval management for status updates
+- Comprehensive error handling with detailed logging
+
+### Changed
+- Refactored extension activation and update logic
+- Enhanced team usage API with team ID support
+- Improved notification system with better timing
+- Updated status bar refresh mechanism
+- Optimized performance during window focus changes
+
+### Fixed
+- Window focus handling during cooldown periods
+- Status bar update timing issues
+- Team usage data synchronization
+- API request throttling and cooldown logic
+- Memory usage optimization
+
 ## [1.0.8] - 2025-02-08
 
 ### Added
