@@ -33,7 +33,8 @@ export function log(message: string, data?: any, error: boolean = false): void {
                         message.includes('[Settings]') ||
                         message.includes('[Critical]') ||
                         message.includes('[Deactivation]') ||
-                        message.includes('[Team]')
+                        message.includes('[Team]') ||
+                        message.includes('[Cooldown]')
                      ));
 
     if (shouldLog) {

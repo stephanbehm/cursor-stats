@@ -185,14 +185,17 @@ export async function checkTeamMembership(token: string, context: vscode.Extensi
     }
 }
 
-export async function getTeamUsage(token: string): Promise<TeamUsageResponse> {
+export async function getTeamUsage(token: string, teamId: number): Promise<TeamUsageResponse> {
     try {
         log('[Team] Making request to get team usage');
-        const response = await axios.get<TeamUsageResponse>('https://www.cursor.com/api/dashboard/get-team-usage', {
-            headers: {
-                Cookie: `WorkosCursorSessionToken=${token}`
+        const response = await axios.post<TeamUsageResponse>('https://www.cursor.com/api/dashboard/get-team-usage', 
+            { teamId }, // Include teamId in request body
+            {
+                headers: {
+                    Cookie: `WorkosCursorSessionToken=${token}`
+                }
             }
-        });
+        );
         log('[Team] Team usage response', {
             memberCount: response.data.teamMemberUsage.length,
             status: response.status

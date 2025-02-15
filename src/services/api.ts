@@ -158,7 +158,7 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
         if (teamInfo.isTeamMember && teamInfo.teamId && teamInfo.userId) {
             // Fetch team usage for team members
             log('[API] Fetching team usage data...');
-            const teamUsage = await getTeamUsage(token);
+            const teamUsage = await getTeamUsage(token, teamInfo.teamId);
             const userUsage = extractUserUsage(teamUsage, teamInfo.userId);
             
             premiumRequests = {
