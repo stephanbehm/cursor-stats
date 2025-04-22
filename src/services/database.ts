@@ -10,7 +10,7 @@ import { execSync } from 'child_process';
 
 export function getCursorDBPath(): string {
     const appName = vscode.env.appName;
-    const folderName = appName === 'Cursor Nightly' ? 'Cursor Nightly' : 'Cursor';
+    const folderName = appName;
 
     if (process.platform === 'win32') {
         return path.join(process.env.APPDATA || '', folderName, 'User', 'globalStorage', 'state.vscdb');
