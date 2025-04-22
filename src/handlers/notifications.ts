@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { log } from '../utils/logger';
-import { convertAndFormatCurrency, getCurrentCurrency } from '../utils/currency';
+import { convertAndFormatCurrency } from '../utils/currency';
+import { UsageInfo } from '../interfaces/types';
 
 // Track which thresholds have been notified in the current session
 const notifiedPremiumThresholds = new Set<number>();
@@ -15,14 +16,6 @@ export function resetNotifications() {
     notifiedSpendingThresholds.clear();
     isNotificationInProgress = false;
     log('[Notifications] Reset notification tracking');
-}
-
-interface UsageInfo {
-    percentage: number;
-    type: 'premium' | 'usage-based';
-    limit?: number;
-    totalSpent?: number;
-    premiumPercentage?: number;
 }
 
 export async function checkAndNotifySpending(totalSpent: number) {

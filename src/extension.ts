@@ -17,7 +17,6 @@ import { updateStats } from './utils/updateStats';
 import { SUPPORTED_CURRENCIES } from './utils/currency';
 import { convertAndFormatCurrency } from './utils/currency';
 import { createReportCommand} from './utils/report';
-import { ProgressBarSettings } from './interfaces/types';
 
 let statusBarItem: vscode.StatusBarItem;
 let extensionContext: vscode.ExtensionContext;

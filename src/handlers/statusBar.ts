@@ -2,9 +2,8 @@ import * as vscode from 'vscode';
 import { log } from '../utils/logger';
 import { getCurrentUsageLimit } from '../services/api';
 import { getCursorTokenFromDB } from '../services/database';
-import { convertAndFormatCurrency, getCurrentCurrency } from '../utils/currency';
+import { convertAndFormatCurrency } from '../utils/currency';
 import { shouldShowProgressBars, createPeriodProgressBar, createUsageProgressBar } from '../utils/progressBars';
-import { ProgressBarSettings } from '../interfaces/types';
 
 
 let statusBarItem: vscode.StatusBarItem;

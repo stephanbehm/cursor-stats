@@ -4,6 +4,14 @@ export interface UsageItem {
     description?: string;
 }
 
+export interface UsageInfo {
+    percentage: number;
+    type: 'premium' | 'usage-based';
+    limit?: number;
+    totalSpent?: number;
+    premiumPercentage?: number;
+}
+
 export interface UsageBasedPricing {
     items: UsageItem[];
     hasUnpaidMidMonthInvoice: boolean;

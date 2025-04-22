@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import axios from 'axios';
-import { CursorReport, UsageLimitResponse, CursorUsageResponse, TeamUsageResponse } from '../interfaces/types';
+import { CursorReport, CursorUsageResponse } from '../interfaces/types';
 import { fetchCursorStats, getCurrentUsageLimit } from '../services/api';
 import { getCursorTokenFromDB } from '../services/database';
 import { log, getLogHistory } from './logger';

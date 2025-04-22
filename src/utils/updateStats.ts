@@ -12,7 +12,6 @@ import {
     getConsecutiveErrorCount,
     incrementConsecutiveErrorCount,
     setCooldownStartTime,
-    setConsecutiveErrorCount,
     resetConsecutiveErrorCount
 } from './cooldown';
 import { createMarkdownTooltip, formatTooltipLine, getMaxLineWidth, getStatusBarColor, createSeparator } from '../handlers/statusBar';

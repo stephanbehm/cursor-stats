@@ -81,19 +81,25 @@ The project is organized into the following directories:
 
 ```
 cursor-stats/
-├── src/
-│   ├── interfaces/      # TypeScript interfaces and types
-│   │   └── types.ts
-│   ├── services/       # Core services for different functionalities
-│   │   ├── api.ts      # API communication with Cursor servers
-│   │   ├── database.ts # SQLite database operations
-│   │   └── github.ts   # GitHub release checking
-│   ├── handlers/       # UI and event handlers
-│   │   ├── statusBar.ts # Status bar UI management
-│   │   └── notifications.ts # Smart notification system
-│   ├── utils/          # Utility functions
-│   │   └── logger.ts   # Logging functionality
-│   └── extension.ts    # Main extension file
+└── src/
+    ├── interfaces/        # TypeScript interfaces and types
+    │   └── types.ts
+    ├── services/         # Core services for different functionalities
+    │   ├── api.ts        # API communication with Cursor servers
+    │   ├── database.ts   # SQLite database operations
+    │   ├── github.ts     # GitHub release checking
+    │   └── team.ts       # Team-related functionality
+    ├── handlers/         # UI and event handlers
+    │   ├── statusBar.ts  # Status bar UI management
+    │   └── notifications.ts # Smart notification system
+    ├── utils/            # Utility functions
+    │   ├── currency.ts   # Currency conversion utilities
+    │   ├── logger.ts     # Logging functionality
+    │   ├── cooldown.ts   # Rate limiting and cooldown management
+    │   ├── progressBars.ts # Progress bar visualization
+    │   ├── report.ts     # Diagnostic report generation
+    │   └── updateStats.ts # Statistics update handling
+    └── extension.ts      # Main extension file
 ```
 
 ## Configuration
