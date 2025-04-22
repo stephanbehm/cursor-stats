@@ -47,13 +47,15 @@ Stay tuned for these exciting new features coming soon:
 
 <table>
 <tr>
-<td width="30%"><img src="https://github.com/user-attachments/assets/d20476ac-0cc9-4072-9040-8543b1c6c7d1" width="100%"/></td>
-<td width="30%"><img src="https://github.com/user-attachments/assets/dc50c52e-29e1-4e9d-b09f-66c5d0a6e4de" width="100%"/></td>
-<td width="30%"><img src="https://github.com/user-attachments/assets/b661dcce-7b74-49c7-866d-d29ad82058f7" width="100%"/></td>
+<td width="25%"><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
+<td width="25%"><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
+<td width="25%"><img src="https://github.com/user-attachments/assets/8ab6a112-3183-4d39-92c0-0bdb79c7d621" width="100%"/></td>
+<td width="25%"><img src="https://github.com/user-attachments/assets/64a88004-96e6-4c24-83cd-bddfb1b7c969" width="100%"/></td>
 </tr>
 <tr>
-<td align="center"> UI </td>
-<td align="center"> UI </td>
+<td align="center"> UI (Default)</td>
+<td align="center"> UI (Custom Currency)</td>
+<td align="center"> UI (With Progress Bars)</td>
 <td align="center"> Settings </td>
 </tr>
 </table>
