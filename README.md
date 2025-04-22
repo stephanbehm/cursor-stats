@@ -34,10 +34,6 @@ Stay tuned for these exciting new features coming soon:
 - 📈 Visual analytics with graphs for historical request usage
 - 🎯 Project-specific request usage monitoring
 - 🎨 Dedicated activity bar section for enhanced statistics view
-- 🔄 Smart API error handling:
-  - Automatic retry reduction during outages
-  - Intelligent refresh rate adjustment
-  - User-friendly error notifications
 - ⚙️ Enhanced customization features:
   - Configurable quota display options
   - Hide/show specific model statistics
@@ -131,6 +127,17 @@ If you encounter any issues or have suggestions, please:
 1. Check our [Known Issues](https://github.com/Dwtexe/cursor-stats/issues)
 2. Submit a new issue if needed
 3. Join the discussion in existing issues
+
+## Donations
+If you find this extension helpful, consider supporting its development:
+
+- **Binance ID**: `39070620`
+
+#### USDT
+- **Multi-Chain Address** (BEP20/ERC20/Arbitrum One/Optimism):
+  `0x88bfb527158387f8f74c5a96a0468615d06f3899`
+- **TRC20**:
+  `TPTnapCanmrsfcMVAyn4YiC6dLP8Wx1Czb`
 
 ## License
 
