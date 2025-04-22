@@ -8,3 +8,5 @@ node_modules
 builds/
 .git/
 *.ps1
+user-cache.json
+currency-rates.json

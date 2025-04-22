@@ -68,61 +68,110 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                 Cookie: `WorkosCursorSessionToken=${token}`
             }
         });
-        log('[API] Monthly invoice response: ' + JSON.stringify({
-            status: response.status,
-            hasItems: !!response.data.items,
-            itemCount: response.data.items?.length,
-            hasUnpaidInvoice: response.data.hasUnpaidMidMonthInvoice
-        }));
-
+        
         const usageItems: UsageItem[] = [];
         let midMonthPayment = 0;
         if (response.data.items) {
-            // First pass: find the maximum request count
+            // First pass: find the maximum request count among valid items
             let maxRequestCount = 0;
             for (const item of response.data.items) {
-                if (!item.description.includes('Mid-month usage paid')) {
-                    const requestCount = parseInt(item.description.match(/(\d+)/)[1]);
+                // Skip items without cents value
+                if (!item.hasOwnProperty('cents')) {
+                    log('[API] Skipping item without cents value: ' + item.description);
+                    continue;
+                }
+                
+                // Skip mid-month payment items
+                if (item.description.includes('Mid-month usage paid')) {
+                    continue;
+                }
+                
+                // Extract the request count - match the first number in the description
+                const match = item.description.match(/^(\d+)/);
+                if (match && match[1]) {
+                    const requestCount = parseInt(match[1]);
                     maxRequestCount = Math.max(maxRequestCount, requestCount);
                 }
             }
+            
             // Calculate the padding width based on the maximum request count
             const paddingWidth = maxRequestCount.toString().length;
 
             for (const item of response.data.items) {
-                log('[API] Processing invoice item: ' + JSON.stringify({
-                    description: item.description,
-                    cents: item.cents
-                }));
+                
+                // Skip items without cents value
+                if (!item.hasOwnProperty('cents')) {
+                    log('[API] Skipping item without cents value: ' + item.description);
+                    continue;
+                }
                 
                 // Check if this is a mid-month payment
                 if (item.description.includes('Mid-month usage paid')) {
+                    // Skip if cents is undefined
+                    if (typeof item.cents === 'undefined') {
+                        continue;
+                    }
                     // Add to the total mid-month payment amount (convert from cents to dollars)
                     midMonthPayment += Math.abs(item.cents) / 100;
                     log(`[API] Added mid-month payment of $${(Math.abs(item.cents) / 100).toFixed(2)}, total now: $${midMonthPayment.toFixed(2)}`);
-                    continue; // Skip adding this to usage items
+                    // Add a special line for mid-month payment that statusBar.ts can parse
+                    usageItems.push({
+                        calculation: `Mid-month payment: $${midMonthPayment.toFixed(2)}`,
+                        totalDollars: `-$${midMonthPayment.toFixed(2)}`,
+                        description: item.description
+                    });
+                    continue; // Skip adding this to regular usage items
                 }
 
-                const requestCount = parseInt(item.description.match(/(\d+)/)[1]);
+                // Extract the request count - match the first number in the description
+                const match = item.description.match(/^(\d+)/);
+                if (!match || !match[1]) {
+                    log('[API] Could not extract request count from: ' + item.description);
+                    continue;
+                }
+                
+                const requestCount = parseInt(match[1]);
                 const cents = item.cents;
-                const costPerRequest = cents / requestCount;
-                const dollars = cents / 100;
+                
+                // Skip items with 0 requests to avoid division by zero
+                if (requestCount === 0) {
+                    log('[API] Skipping item with 0 requests: ' + item.description);
+                    continue;
+                }
+                
+                // Skip if cents is undefined
+                if (typeof item.cents === 'undefined') {
+                    log('[API] Skipping item with undefined cents value: ' + item.description);
+                    continue;
+                }
+                
+                const costPerRequest = item.cents / requestCount;
+                const dollars = item.cents / 100;
 
                 // Pad request count based on the maximum width
                 const paddedRequestCount = requestCount.toString().padStart(paddingWidth, '0');
                 // Format cost per request in dollars
                 const costPerRequestDollars = (costPerRequest / 100).toFixed(2);
 
+                // Get a user-friendly description based on the item type
+                let itemType = "requests";
+                if (item.description.includes("tool calls")) {
+                    itemType = "tool calls";
+                } else if (item.description.match(/claude|gpt|gemini|o1|o3-mini/i)) {
+                    itemType = "AI requests";
+                }
+
                 usageItems.push({
                     calculation: `${paddedRequestCount}*$${costPerRequestDollars}`,
-                    totalDollars: `$${dollars.toFixed(2)}`
+                    totalDollars: `$${dollars.toFixed(2)}`,
+                    description: item.description // Add the original description for reference
                 });
             }
         }
         
         return {
             items: usageItems,
-            hasUnpaidMidMonthInvoice: response.data.hasUnpaidMidMonthInvoice || false,
+            hasUnpaidMidMonthInvoice: false,
             midMonthPayment
         };
     } catch (error: any) {
@@ -138,21 +187,13 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
 }
 
 export async function fetchCursorStats(token: string): Promise<CursorStats> {
-    log('[API] Fetching Cursor stats...');
-    log('[API] Token format check: ' + JSON.stringify({
-        containsSeparator: token.includes('%3A%3A'),
-        length: token.length
-    }));
-
     // Extract user ID from token
     const userId = token.split('%3A%3A')[0];
-    log(`[API] Extracted userId for API calls: ${userId}`);
 
     try {
         // Check if user is a team member
         const context = getExtensionContext();
         const teamInfo = await checkTeamMembership(token, context);
-        log(`[API] Team membership check result: ${JSON.stringify(teamInfo)}`);
 
         let premiumRequests;
         if (teamInfo.isTeamMember && teamInfo.teamId && teamInfo.userId) {
@@ -168,21 +209,12 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
             };
             log('[API] Successfully extracted team member usage data');
         } else {
-            // Fetch regular usage for non-team members
-            log('[API] Fetching regular premium usage data...');
             const premiumResponse = await axios.get<CursorUsageResponse>('https://www.cursor.com/api/usage', {
                 params: { user: userId },
                 headers: {
                     Cookie: `WorkosCursorSessionToken=${token}`
                 }
             });
-            log('[API] Premium response: ' + JSON.stringify({
-                status: premiumResponse.status,
-                hasGPT4: !!premiumResponse.data['gpt-4'],
-                numRequests: premiumResponse.data['gpt-4']?.numRequests,
-                maxRequests: premiumResponse.data['gpt-4']?.maxRequestUsage,
-                startOfMonth: premiumResponse.data.startOfMonth
-            }));
 
             premiumRequests = {
                 current: premiumResponse.data['gpt-4'].numRequests,
@@ -191,7 +223,7 @@ export async function fetchCursorStats(token: string): Promise<CursorStats> {
             };
         }
 
-        // Get current date for usage-based pricing (which renews on 3rd/4th of each month)
+        // Get current date for usage-based pricing (which renews on 2nd/3rd of each month)
         const currentDate = new Date();
         const usageBasedBillingDay = 3; // Assuming it's the 3rd day of the month
         let usageBasedCurrentMonth = currentDate.getMonth() + 1;

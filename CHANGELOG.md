@@ -19,6 +19,35 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.1.0] - 2025-04-22
+
+### Added
+- 🌍 Multi-currency support
+- 📊 Progress bar visualization for usage and period tracking
+- 📝 Diagnostic report generation for troubleshooting
+- 🎨 Enhanced tooltips with improved formatting and clarity
+- ⚙️ Custom database path configuration option
+- 🔄 Improved model detection and notifications
+- 📈 Better usage statistics presentation
+- 💡 Smart progress bars with configurable thresholds
+
+### Changed
+- Refactored currency handling with real-time conversion
+- Enhanced tooltip display with centered alignment
+- Improved error handling and notifications
+- Updated usage tracking for new AI models
+- Enhanced status bar information display
+- Better organization of configuration options
+- Optimized performance for currency conversions
+
+### Fixed
+- Currency display formatting issues
+- Progress bar threshold calculations
+- Model detection accuracy
+- Usage percentage calculations
+- Status bar update timing
+- Configuration change handling
+
 ## [1.0.9] - 2025-02-15
 
 ### Added

@@ -1,6 +1,7 @@
 export interface UsageItem {
     calculation: string;
     totalDollars: string;
+    description?: string;
 }
 
 export interface UsageBasedPricing {
@@ -25,6 +26,12 @@ export interface CursorStats {
         limit: number;
         startOfMonth: string;
     };
+}
+
+export interface ProgressBarSettings {
+    barLength: number;
+    warningThreshold: number;
+    criticalThreshold: number;
 }
 
 export interface SQLiteRow {
@@ -180,4 +187,47 @@ export interface UserCache {
     teamId?: number;
     lastChecked: number;
     startOfMonth?: string;
+}
+
+export interface CurrencyRates {
+    date: string;
+    usd: {
+        [key: string]: number;
+    };
+}
+
+export interface CurrencyCache {
+    rates: CurrencyRates;
+    timestamp: number;
+}
+
+export interface CursorReport {
+    timestamp: string;
+    extensionVersion: string;
+    os: string;
+    vsCodeVersion: string;
+    cursorStats: CursorStats | null;
+    usageLimitResponse: UsageLimitResponse | null;
+    premiumUsage: CursorUsageResponse | null;
+    teamInfo: {
+        isTeamMember: boolean;
+        teamId?: number;
+        userId?: number;
+    } | null;
+    teamUsage: TeamUsageResponse | null;
+    rawResponses: {
+        cursorStats?: any;
+        usageLimit?: any;
+        premiumUsage?: any;
+        teamInfo?: any;
+        teamUsage?: any;
+        monthlyInvoice?: {
+            current?: any;
+            last?: any;
+        };
+    };
+    logs: string[];
+    errors: {
+        [key: string]: string;
+    };
 } 

@@ -73,6 +73,8 @@ images/**/*.?(png|gif|jpg|jpeg|webp)
 **/*.vsix
 
 *.ps1
+user-cache.json
+currency-rates.json
 
 # exclude any md files
 **/*.md

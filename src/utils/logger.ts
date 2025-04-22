@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 
 let outputChannel: vscode.OutputChannel | undefined;
+// Keep a log history in memory for reporting
+const logHistory: string[] = [];
+const MAX_LOG_HISTORY = 1000; // Maximum number of log entries to keep in memory
 
 export function initializeLogging(context: vscode.ExtensionContext): void {
     try {
@@ -34,7 +37,9 @@ export function log(message: string, data?: any, error: boolean = false): void {
                         message.includes('[Critical]') ||
                         message.includes('[Deactivation]') ||
                         message.includes('[Team]') ||
-                        message.includes('[Cooldown]')
+                        message.includes('[Cooldown]') ||
+                        message.includes('[Currency]') ||
+                        message.includes('[Report]')
                      ));
 
     if (shouldLog) {
@@ -59,6 +64,9 @@ function safeLog(message: string, data?: any, isError: boolean = false): void {
         }
     }
 
+    // Store in the log history
+    addToLogHistory(logMessage);
+
     // Always log to console
     if (isError) {
         console.error(logMessage);
@@ -81,6 +89,26 @@ function safeLog(message: string, data?: any, isError: boolean = false): void {
             console.error('Failed to show error message in UI');
         }
     }
+}
+
+function addToLogHistory(logMessage: string): void {
+    // Add to the beginning for most recent first
+    logHistory.unshift(logMessage);
+    
+    // Trim if exceeds maximum size
+    if (logHistory.length > MAX_LOG_HISTORY) {
+        logHistory.length = MAX_LOG_HISTORY;
+    }
+}
+
+// Get all stored logs for reporting purposes
+export function getLogHistory(): string[] {
+    return [...logHistory];
+}
+
+// Clear the log history
+export function clearLogHistory(): void {
+    logHistory.length = 0;
 }
 
 export function disposeLogger(): void {

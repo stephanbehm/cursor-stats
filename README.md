@@ -20,6 +20,11 @@ A VS Code extension that provides real-time statistics about your Cursor usage, 
 - ⚡ Command palette integration
 - 🌙 Support for both regular and nightly Cursor versions
 - 🔄 Enhanced GitHub release updates with markdown support
+- 🌍 Multi-currency support
+- 📊 Progress bar visualization for usage tracking
+- 📝 Diagnostic report generation for troubleshooting
+- ⚙️ Custom database path configuration
+- 🔄 Smart model detection and notifications
 
 ## Upcoming Features
 
@@ -104,6 +109,12 @@ The extension can be configured through VS Code settings:
 - `cursorStats.usageAlertThresholds`: Configure percentage thresholds for alerts
 - `cursorStats.refreshInterval`: Set update frequency
 - `cursorStats.spendingAlertThreshold`: Configure dollar amount thresholds for spending alerts
+- `cursorStats.currency`: Select display currency
+- `cursorStats.showProgressBars`: Toggle progress bar visualization
+- `cursorStats.progressBarLength`: Configure progress bar length
+- `cursorStats.progressBarWarningThreshold`: Set warning threshold for progress bars
+- `cursorStats.progressBarCriticalThreshold`: Set critical threshold for progress bars
+- `cursorStats.customDatabasePath`: Set custom path to Cursor database file
 
 ## Contributing
 

@@ -16,20 +16,10 @@ export async function getUserCachePath(context: vscode.ExtensionContext): Promis
 
 export async function loadUserCache(context: vscode.ExtensionContext): Promise<UserCache | null> {
     try {
-        const cachePath = await getUserCachePath(context);
-        log('[Team] Checking cache file existence', { path: cachePath });
-        
+        const cachePath = await getUserCachePath(context);        
         if (fs.existsSync(cachePath)) {
-            log('[Team] Cache file found, reading contents');
             const cacheData = fs.readFileSync(cachePath, 'utf8');
             const cache = JSON.parse(cacheData);
-            log('[Team] Cache contents', {
-                userId: cache.userId,
-                isTeamMember: cache.isTeamMember,
-                teamId: cache.teamId,
-                lastChecked: new Date(cache.lastChecked).toISOString(),
-                hasStartOfMonth: !!cache.startOfMonth
-            });
             return cache;
         } else {
             log('[Team] No cache file found');
@@ -70,27 +60,14 @@ export async function saveUserCache(context: vscode.ExtensionContext, cache: Use
 
 export async function checkTeamMembership(token: string, context: vscode.ExtensionContext): Promise<{ isTeamMember: boolean; teamId?: number; userId?: number; startOfMonth: string }> {
     try {
-        log('[Team] Starting team membership check');
-        
         // Extract JWT sub from token
         const jwtToken = token.split('%3A%3A')[1];
         const decoded = jwt.decode(jwtToken, { complete: true });
         const jwtSub = decoded?.payload?.sub as string;
-        log('[Team] JWT decoded successfully', {
-            sub: jwtSub,
-            hasPayload: !!decoded?.payload
-        });
 
         // Check cache first
         const cache = await loadUserCache(context);
         if (cache && cache.jwtSub === jwtSub && cache.startOfMonth) {
-            log('[Team] Using cached team membership data', {
-                userId: cache.userId,
-                isTeamMember: cache.isTeamMember,
-                teamId: cache.teamId,
-                startOfMonth: cache.startOfMonth,
-                cacheAge: Math.round((Date.now() - cache.lastChecked) / 1000) + ' seconds'
-            });
             return {
                 isTeamMember: cache.isTeamMember,
                 teamId: cache.teamId,

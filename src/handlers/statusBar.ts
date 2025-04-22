@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { log } from '../utils/logger';
 import { getCurrentUsageLimit } from '../services/api';
 import { getCursorTokenFromDB } from '../services/database';
+import { convertAndFormatCurrency, getCurrentCurrency } from '../utils/currency';
+import { shouldShowProgressBars, createPeriodProgressBar, createUsageProgressBar } from '../utils/progressBars';
+import { ProgressBarSettings } from '../interfaces/types';
 
 
 let statusBarItem: vscode.StatusBarItem;
@@ -46,20 +49,6 @@ export function createSeparator(width: number): string {
     return '╌'.repeat(separatorWidth + 5);
 }
 
-export function getUsageLimitEmoji(currentCost: number, limit: number): string {
-    const percentage = (currentCost / limit) * 100;
-    if (percentage >= 90) {
-        return '🔴';
-    }
-    if (percentage >= 75) {
-        return '🟡';
-    }
-    if (percentage >= 50) {
-        return '🟢';
-    }
-    return '✅';
-}
-
 export function formatRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const hours = date.getHours().toString().padStart(2, '0');
@@ -69,7 +58,7 @@ export function formatRelativeTime(dateString: string): string {
     return `${hours}:${minutes}:${seconds}`;
 }
 
-export async function createMarkdownTooltip(lines: string[], isError: boolean = false): Promise<vscode.MarkdownString> {
+export async function createMarkdownTooltip(lines: string[], isError: boolean = false, allLines: string[] = []): Promise<vscode.MarkdownString> {
     const tooltip = new vscode.MarkdownString();
     tooltip.isTrusted = true;
     tooltip.supportHtml = true;
@@ -96,12 +85,56 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
             const startOfMonthLine = lines.find(line => line.includes('Fast Requests Period:'));
             
             if (requestLine) {
-                if (startOfMonthLine) {
-                    tooltip.appendMarkdown(`**Period:** ${startOfMonthLine.split(':')[1].trim()}\n\n`);
-                }
-                tooltip.appendMarkdown(`**Usage:** ${requestLine.split('•')[1].trim()}\n\n`);
-                if (percentLine) {
-                    tooltip.appendMarkdown(`**Progress:** ${percentLine.split('📊')[1].trim()}\n\n`);
+                // Extract usage information from request line and percentage line
+                const usageMatch = requestLine.match(/(\d+)\/(\d+)/);
+                const percentMatch = percentLine ? percentLine.match(/(\d+)%/) : null;
+                
+                if (usageMatch && usageMatch.length >= 3 && percentMatch && percentMatch.length >= 2) {
+                    const used = parseInt(usageMatch[1]);
+                    const total = parseInt(usageMatch[2]);
+                    const percent = parseInt(percentMatch[1]);
+                    
+                    let displayText = `${used}/${total} (${percent}%) used`;
+                    
+                    if (startOfMonthLine) {
+                        const periodInfo = startOfMonthLine.split(':')[1].trim();
+                        displayText = `${periodInfo} ● ${displayText}`;
+
+                        // Calculate date elapsed percentage
+                        const [startDate, endDate] = periodInfo.split('-').map(d => d.trim());
+                        const elapsedPercent = Math.round(calculateDateElapsedPercentage(startDate, endDate));
+                        displayText = `${periodInfo} (${elapsedPercent}%) ● ${used}/${total} (${percent}%) used`;
+
+                        // Display the text
+                        tooltip.appendMarkdown(`<div align="center">${displayText}</div>\n\n`);
+                        
+                        // Add progress bar for premium requests
+                        if (shouldShowProgressBars() && periodInfo) {
+                            // First add usage progress bar
+                            const usageProgressBar = createUsageProgressBar(used, total, 'Usage');
+                            if (usageProgressBar) {
+                                tooltip.appendMarkdown(`<div align="center">${usageProgressBar}</div>\n\n`);
+                            }
+                            
+                            // Then add period progress bar
+                            const periodProgressBar = createPeriodProgressBar(periodInfo, undefined, 'Period');
+                            if (periodProgressBar) {
+                                tooltip.appendMarkdown(`<div align="center">${periodProgressBar}</div>\n\n`);
+                            }
+                        }
+                    } else {
+                        tooltip.appendMarkdown(`<div align="center">${displayText}</div>\n\n`);
+                    }
+                } else {
+                    // Fallback to original format if parsing fails
+                    let displayText = `${requestLine.split('•')[1].trim()}`;
+                    
+                    if (startOfMonthLine) {
+                        const periodInfo = startOfMonthLine.split(':')[1].trim();
+                        displayText = `${periodInfo} ● ${displayText}`;
+                    }
+                    
+                    tooltip.appendMarkdown(`<div align="center">${displayText}</div>\n\n`);
                 }
             }
         }
@@ -114,8 +147,35 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
             try {
                 const limitResponse = await getCurrentUsageLimit(token);
                 isEnabled = !limitResponse.noUsageBasedAllowed;
+                
+                // Find the original USD data from allLines
+                let originalUsageData = null;
+                if (allLines && allLines.length > 0) {
+                    const metadataLine = allLines.find(line => line.includes('__USD_USAGE_DATA__:'));
+                    if (metadataLine) {
+                        try {
+                            const jsonStr = metadataLine.split('__USD_USAGE_DATA__:')[1].trim();
+                            originalUsageData = JSON.parse(jsonStr);
+                        } catch (e: any) {
+                            log('[Status Bar] Error parsing USD data: ' + e.message, true);
+                        }
+                    }
+                }
+                
                 const costLine = lines.find(line => line.includes('Total Cost:'));
-                const totalCost = costLine ? parseFloat(costLine.split('$')[1]) : 0;
+                let totalCost = 0;
+                let formattedTotalCost = '';
+                
+                if (costLine) {
+                    // Extract the cost value, regardless of currency format
+                    const costMatch = costLine.match(/[^0-9]*([0-9.,]+)/);
+                    if (costMatch && costMatch[1]) {
+                        // Convert back to a number, removing any non-numeric characters except decimal point
+                        totalCost = parseFloat(costMatch[1].replace(/[^0-9.]/g, ''));
+                        formattedTotalCost = costLine.split(':')[1].trim();
+                    }
+                }
+                
                 const usageBasedPeriodLine = lines.find(line => line.includes('Usage Based Period:'));
 
                 tooltip.appendMarkdown('<div align="center">\n\n');
@@ -124,41 +184,82 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                 
                 if (isEnabled && limitResponse.hardLimit) {
                     if (usageBasedPeriodLine) {
-                        tooltip.appendMarkdown(`**Period:** ${usageBasedPeriodLine.split(':')[1].trim()}\n\n`);
+                        const periodText = usageBasedPeriodLine.split(':')[1].trim();
+                        
+                        // Use the original USD data for percentage calculation if available
+                        let usagePercentage = '0.0';
+                        if (originalUsageData && originalUsageData.percentage) {
+                            usagePercentage = originalUsageData.percentage;
+                        } else {
+                            // Fallback to calculating with converted values
+                            usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
+                        }
+                        
+                        // Convert the limit to the user's preferred currency
+                        const formattedLimit = await convertAndFormatCurrency(limitResponse.hardLimit);
+
+                        // Calculate date elapsed percentage for usage-based period
+                        const [startDate, endDate] = periodText.split('-').map(d => d.trim());
+                        const elapsedPercent = Math.round(calculateDateElapsedPercentage(startDate, endDate));
+                        
+                        tooltip.appendMarkdown(`<div align="center">${periodText} (${elapsedPercent}%) ● ${formattedLimit} (${usagePercentage}% | ${formattedTotalCost} used)</div>\n\n`);
+                        
+                        // Add usage-based pricing progress bar
+                        if (shouldShowProgressBars()) {
+                            const usageProgressBar = createUsageProgressBar(
+                                parseFloat(usagePercentage), 
+                                100, 
+                                'Usage'
+                            );
+                            if (usageProgressBar) {
+                                tooltip.appendMarkdown(`<div align="center">${usageProgressBar}</div>\n\n`);
+                            }
+                            
+                            // Add period progress bar
+                            const periodProgressBar = createPeriodProgressBar(
+                                periodText,
+                                undefined,
+                                'Period'
+                            );
+                            if (periodProgressBar) {
+                                tooltip.appendMarkdown(`<div align="center">${periodProgressBar}</div>\n\n`);
+                            }
+                        }
                     }
-                    const usagePercentage = ((totalCost / limitResponse.hardLimit) * 100).toFixed(1);
-                    const usageEmoji = getUsageLimitEmoji(totalCost, limitResponse.hardLimit);
-                    tooltip.appendMarkdown(`**Monthly Limit:** $${limitResponse.hardLimit.toFixed(2)} (${usagePercentage}% used) ${usageEmoji}\n\n`);
                 } else if (!isEnabled) {
                     tooltip.appendMarkdown('> ℹ️ Usage-based pricing is currently disabled\n\n');
                 }
                 
                 // Show usage details regardless of enabled/disabled status
-                const pricingLines = lines.filter(line => line.includes('*') && line.includes('➜'));
+                const pricingLines = lines.filter(line => (line.includes('*') || line.includes('→')) && line.includes('➜'));
                 if (pricingLines.length > 0) {
-                    const costLine = lines.find(line => line.includes('Total Cost:'));
-                    const totalCost = costLine ? costLine.split('Total Cost:')[1].trim() : '';
-                    const midMonthPaymentLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
-                    const midMonthPayment = midMonthPaymentLine ? 
-                        (midMonthPaymentLine.match(/\$(\d+\.\d+)/) || [])[1] ? 
-                        parseFloat((midMonthPaymentLine.match(/\$(\d+\.\d+)/) || [])[1]) : 0 
-                        : 0;
-                    const unpaidAmount = parseFloat(totalCost.replace('$', '')) - midMonthPayment;
+                    // Find mid-month payment from the lines directly
+                    const midMonthPaymentLine = lines.find(line => line.includes('Mid-month payment:'));
+                    let midMonthPayment = 0;
+                    let formattedMidMonthPayment = '';
                     
-                    if (midMonthPayment > 0) {
-                        tooltip.appendMarkdown(`**Current Usage** (Total: $${parseFloat(totalCost.replace('$', '')).toFixed(2)} - Unpaid: $${unpaidAmount.toFixed(2)}):\n\n`);
-                    } else {
-                        tooltip.appendMarkdown(`**Current Usage** (Total: ${totalCost}):\n\n`);
+                    if (midMonthPaymentLine) {
+                        // Extract the payment amount, regardless of currency format
+                        const paymentMatch = midMonthPaymentLine.match(/[^0-9]*([0-9.,]+)/);
+                        if (paymentMatch && paymentMatch[1]) {
+                            midMonthPayment = parseFloat(paymentMatch[1].replace(/[^0-9.]/g, ''));
+                            formattedMidMonthPayment = midMonthPaymentLine.split('paid ')[1].split(' of')[0];
+                        }
                     }
                     
+                    const unpaidAmount = totalCost - midMonthPayment;
+                    
+                    // Use formatted output directly
                     pricingLines.forEach(line => {
-                        const [calc, cost] = line.split('➜').map(part => part.trim());
-                        tooltip.appendMarkdown(`• ${calc.replace('•', '').trim()} → ${cost}\n\n`);
+                        tooltip.appendMarkdown(`• ${line.replace('•', '').trim()}\n\n`);
                     });
 
                     // Add mid-month payment message if it exists
                     if (midMonthPaymentLine) {
-                        tooltip.appendMarkdown(`> ${midMonthPaymentLine.trim()}\n\n`);
+                        const formattedUnpaidAmount = lines.find(line => line.includes('Unpaid:'))?.split('Unpaid:')[1].trim() || 
+                                                      await convertAndFormatCurrency(unpaidAmount);
+                        
+                        tooltip.appendMarkdown(`> ℹ️ You have paid ${formattedMidMonthPayment} of this cost already. (Unpaid: ${formattedUnpaidAmount})\n\n`);
                     }
                 } else {
                     tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
@@ -178,6 +279,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
     
     // First row: Account and Extension settings
     tooltip.appendMarkdown('🌐 [Account Settings](https://www.cursor.com/settings) • ');
+    tooltip.appendMarkdown('🌍 [Currency](command:cursor-stats.selectCurrency) • ');
     tooltip.appendMarkdown('⚙️ [Extension Settings](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats%22)\n\n');
     
     // Second row: Usage Based Pricing, Refresh, and Last Updated
@@ -200,7 +302,7 @@ export function getStatusBarColor(percentage: number): vscode.ThemeColor {
     
     if (!colorsEnabled) {
         return new vscode.ThemeColor('statusBarItem.foreground');
-    }
+    } 
 
     if (percentage >= 95) {
         return new vscode.ThemeColor('charts.red');
@@ -233,19 +335,6 @@ export function getStatusBarColor(percentage: number): vscode.ThemeColor {
     }
 }
 
-export function getUsageEmoji(percentage: number): string {
-    if (percentage >= 90) {
-        return '🔴';
-    }
-    if (percentage >= 75) {
-        return '🟡';
-    }
-    if (percentage >= 50) {
-        return '🟢';
-    }
-    return '✅';
-}
-
 export function getMonthName(month: number): string {
     const months = [
         'January', 'February', 'March', 'April',
@@ -253,4 +342,42 @@ export function getMonthName(month: number): string {
         'September', 'October', 'November', 'December'
     ];
     return months[month - 1];
+}
+
+function calculateDateElapsedPercentage(startDateStr: string, endDateStr: string): number {
+    // Parse dates in "DD Month" format
+    const parseDate = (dateStr: string) => {
+        const [day, month] = dateStr.trim().split(' ');
+        const months: { [key: string]: number } = {
+            'January': 0, 'February': 1, 'March': 2, 'April': 3,
+            'May': 4, 'June': 5, 'July': 6, 'August': 7,
+            'September': 8, 'October': 9, 'November': 10, 'December': 11
+        };
+        const currentYear = new Date().getFullYear();
+        return new Date(currentYear, months[month], parseInt(day));
+    };
+
+    const startDate = parseDate(startDateStr);
+    const endDate = parseDate(endDateStr);
+    const currentDate = new Date();
+
+    // Adjust year if the end date is in the next year
+    if (endDate < startDate) {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+    }
+
+    // If current date is before start date, return 0%
+    if (currentDate < startDate) {
+        return 0;
+    }
+
+    // If current date is after end date, return 100%
+    if (currentDate > endDate) {
+        return 100;
+    }
+
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    const elapsedDuration = currentDate.getTime() - startDate.getTime();
+
+    return Math.min(Math.max((elapsedDuration / totalDuration) * 100, 0), 100);
 }

@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
 import { log } from '../utils/logger';
+import { convertAndFormatCurrency, getCurrentCurrency } from '../utils/currency';
 
 // Track which thresholds have been notified in the current session
-const notifiedThresholds = new Set<number>();
+const notifiedPremiumThresholds = new Set<number>();
+const notifiedUsageBasedThresholds = new Set<number>();
 const notifiedSpendingThresholds = new Set<number>();
 let isNotificationInProgress = false;
 
 // Reset notification tracking
 export function resetNotifications() {
-    notifiedThresholds.clear();
+    notifiedPremiumThresholds.clear();
+    notifiedUsageBasedThresholds.clear();
     notifiedSpendingThresholds.clear();
     isNotificationInProgress = false;
     log('[Notifications] Reset notification tracking');
@@ -24,7 +27,6 @@ interface UsageInfo {
 
 export async function checkAndNotifySpending(totalSpent: number) {
     if (isNotificationInProgress) {
-        log('[Notifications] Notification already in progress, skipping spending check...');
         return;
     }
 
@@ -47,8 +49,12 @@ export async function checkAndNotifySpending(totalSpent: number) {
         if (totalSpent >= nextNotificationAmount && !notifiedSpendingThresholds.has(currentThresholdMultiple + 1)) {
             log(`[Notifications] Spending threshold reached (Total spent: $${totalSpent.toFixed(2)}, Next notification at: $${nextNotificationAmount.toFixed(2)})`);
             
-            const message = `Your Cursor usage spending has reached $${totalSpent.toFixed(2)}`;
-            const detail = `Next notification will be at $${(nextNotificationAmount + spendingThreshold).toFixed(2)}. Click Manage Limit to adjust your usage settings.`;
+            // Convert the amounts to the user's preferred currency
+            const formattedTotalSpent = await convertAndFormatCurrency(totalSpent);
+            const formattedNextThreshold = await convertAndFormatCurrency(nextNotificationAmount + spendingThreshold);
+            
+            const message = `Your Cursor usage spending has reached ${formattedTotalSpent}`;
+            const detail = `Next notification will be at ${formattedNextThreshold}. Click Manage Limit to adjust your usage settings.`;
 
             // Show the notification
             const notification = await vscode.window.showInformationMessage(
@@ -73,7 +79,6 @@ export async function checkAndNotifySpending(totalSpent: number) {
 export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
     // Prevent concurrent notifications
     if (isNotificationInProgress) {
-        log('[Notifications] Notification already in progress, skipping...');
         return;
     }
 
@@ -92,7 +97,7 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
         const { percentage, type, limit } = usageInfo;
 
         // If this is a usage-based notification and premium is not over limit, skip it
-        if (type === 'usage-based' && usageInfo.premiumPercentage && usageInfo.premiumPercentage <= 100) {
+        if (type === 'usage-based' && usageInfo.premiumPercentage && usageInfo.premiumPercentage < 100) {
             log('[Notifications] Skipping usage-based notification as premium requests are not exhausted');
             return;
         }
@@ -101,7 +106,8 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
         const highestExceededThreshold = thresholds.find(threshold => percentage >= threshold);
         
         // Only notify if we haven't notified this threshold yet
-        if (highestExceededThreshold && !notifiedThresholds.has(highestExceededThreshold)) {
+        const relevantThresholds = type === 'premium' ? notifiedPremiumThresholds : notifiedUsageBasedThresholds;
+        if (highestExceededThreshold && !relevantThresholds.has(highestExceededThreshold)) {
             log(`[Notifications] Highest usage threshold ${highestExceededThreshold}% exceeded for ${type} usage`);
             
             let message, detail;
@@ -148,16 +154,16 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
             // Mark all thresholds up to and including the current one as notified
             thresholds.forEach(threshold => {
                 if (threshold <= highestExceededThreshold) {
-                    notifiedThresholds.add(threshold);
+                    relevantThresholds.add(threshold);
                 }
             });
         }
 
         // Clear notifications for thresholds that are no longer exceeded
-        for (const threshold of notifiedThresholds) {
+        for (const threshold of relevantThresholds) {
             if (percentage < threshold) {
-                notifiedThresholds.delete(threshold);
-                log(`[Notifications] Cleared notification for threshold ${threshold}% as usage dropped below it`);
+                relevantThresholds.delete(threshold);
+                log(`[Notifications] Cleared notification for threshold ${threshold}% as ${type} usage dropped below it`);
             }
         }
     } finally {

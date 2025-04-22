@@ -14,6 +14,10 @@ import {
     startCountdownDisplay
 } from './utils/cooldown';
 import { updateStats } from './utils/updateStats';
+import { SUPPORTED_CURRENCIES } from './utils/currency';
+import { convertAndFormatCurrency } from './utils/currency';
+import { createReportCommand} from './utils/report';
+import { ProgressBarSettings } from './interfaces/types';
 
 let statusBarItem: vscode.StatusBarItem;
 let extensionContext: vscode.ExtensionContext;
@@ -69,7 +73,6 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
             } else {
                 clearAllIntervals();
-                log('[Refresh] Cleared intervals due to window losing focus');
             }
         });
 
@@ -124,6 +127,10 @@ export async function activate(context: vscode.ExtensionContext) {
                 log('[Settings] Show total requests setting changed, updating display...');
                 await updateStats(statusBarItem);
             }
+            if (e.affectsConfiguration('cursorStats.currency')) {
+                log('[Settings] Currency setting changed, updating display...');
+                await updateStats(statusBarItem);
+            }
         });
         
 
@@ -175,7 +182,8 @@ export async function activate(context: vscode.ExtensionContext) {
                             });
                             if (limit) {
                                 await setUsageLimit(token, Number(limit), false);
-                                vscode.window.showInformationMessage(`Usage-based pricing enabled with $${limit} limit`);
+                                const formattedLimit = await convertAndFormatCurrency(Number(limit));
+                                vscode.window.showInformationMessage(`Usage-based pricing enabled with ${formattedLimit} limit`);
                                 await updateStats(statusBarItem);
                             }
                         } else {
@@ -195,7 +203,8 @@ export async function activate(context: vscode.ExtensionContext) {
                             });
                             if (newLimit) {
                                 await setUsageLimit(token, Number(newLimit), false);
-                                vscode.window.showInformationMessage(`Monthly limit updated to $${newLimit}`);
+                                const formattedLimit = await convertAndFormatCurrency(Number(newLimit));
+                                vscode.window.showInformationMessage(`Monthly limit updated to ${formattedLimit}`);
                                 await updateStats(statusBarItem);
                             }
                         } else {
@@ -222,12 +231,36 @@ export async function activate(context: vscode.ExtensionContext) {
         statusBarItem.command = 'cursor-stats.openSettings';
         log('[Status Bar] Command assigned to status bar item');
         
+        // Register package.json configuration contribution
+        context.subscriptions.push(
+            vscode.commands.registerCommand('cursor-stats.selectCurrency', async () => {
+                const currencyPicks = SUPPORTED_CURRENCIES.map(currency => ({
+                    label: `${currency.code} (${currency.name})`,
+                    description: currency.code === 'USD' ? 'Default' : '',
+                    code: currency.code
+                }));
+                
+                const selected = await vscode.window.showQuickPick(currencyPicks, {
+                    placeHolder: 'Select currency for display',
+                });
+                
+                if (selected) {
+                    const config = vscode.workspace.getConfiguration('cursorStats');
+                    await config.update('currency', selected.code, vscode.ConfigurationTarget.Global);
+                    log(`[Settings] Currency changed to ${selected.code}`);
+                    await updateStats(statusBarItem);
+                }
+            })
+        );
+        
+        
         // Add to subscriptions
         context.subscriptions.push(
             statusBarItem, 
             openCursorSettings, 
             refreshCommand, 
             setLimitCommand,
+            createReportCommand,
             configListener,
             focusListener  // Add focus listener to subscriptions
         );
@@ -247,6 +280,26 @@ export async function activate(context: vscode.ExtensionContext) {
             // Check for updates after initial stats are loaded
             await checkForUpdates(lastReleaseCheck, RELEASE_CHECK_INTERVAL);
         }, 1500);
+
+        // Register configuration for the progress bars
+        const config = vscode.workspace.getConfiguration('cursorStats');
+        
+        // Default settings for progress bars (disabled by default)
+        if (config.get('showProgressBars') === undefined) {
+            config.update('showProgressBars', false, vscode.ConfigurationTarget.Global);
+        }
+        
+        if (config.get('progressBarLength') === undefined) {
+            config.update('progressBarLength', 10, vscode.ConfigurationTarget.Global);
+        }
+        
+        if (config.get('progressBarWarningThreshold') === undefined) {
+            config.update('progressBarWarningThreshold', 75, vscode.ConfigurationTarget.Global);
+        }
+        
+        if (config.get('progressBarCriticalThreshold') === undefined) {
+            config.update('progressBarCriticalThreshold', 90, vscode.ConfigurationTarget.Global);
+        }
 
         log('[Initialization] Extension activation completed successfully');
     } catch (error) {

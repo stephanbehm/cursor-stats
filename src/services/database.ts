@@ -9,8 +9,15 @@ import { execSync } from 'child_process';
 
 
 export function getCursorDBPath(): string {
-    const appName = vscode.env.appName;
-    const folderName = appName;
+    // Check for custom path in settings
+    const config = vscode.workspace.getConfiguration('cursorStats');
+    const customPath = config.get<string>('customDatabasePath');
+    
+    if (customPath && customPath.trim() !== '') {
+        log(`[Database] Using custom path: ${customPath}`);
+        return customPath;
+    }
+    const folderName = vscode.env.appName;
 
     if (process.platform === 'win32') {
         return path.join(process.env.APPDATA || '', folderName, 'User', 'globalStorage', 'state.vscdb');
@@ -32,14 +39,10 @@ export function getCursorDBPath(): string {
 export async function getCursorTokenFromDB(): Promise<string | undefined> {
     try {
         const dbPath = getCursorDBPath();
-
-        log(`Platform: ${process.platform}`);
-        log(`Home directory: ${os.homedir()}`);
-        log(`Attempting to open database at: ${dbPath}`);
-        log(`Database path exists: ${fs.existsSync(dbPath)}`);
+        log(`[Database] Attempting to open database at: ${dbPath}`);
 
         if (!fs.existsSync(dbPath)) {
-            log('Database file does not exist', true);
+            log('[Database] Database file does not exist', true);
             return undefined;
         }
 
@@ -47,44 +50,35 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
         const SQL = await initSqlJs();
         const db = new SQL.Database(new Uint8Array(dbBuffer));
 
-        log('Successfully opened database connection');
-        log('Executing SQL query for token...');
-
         const result = db.exec("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
         
         if (!result.length || !result[0].values.length) {
-            log('No token found in database');
+            log('[Database] No token found in database');
             db.close();
             return undefined;
         }
 
         const token = result[0].values[0][0] as string;
-        log(`Token length: ${token.length}`);
-        log(`Token starts with: ${token.substring(0, 20)}...`);
+        log(`[Database] Token starts with: ${token.substring(0, 20)}...`);
 
         try {
             const decoded = jwt.decode(token, { complete: true });
-            log(`JWT decoded successfully: ${!!decoded}`);
-            log(`JWT payload exists: ${!!(decoded && decoded.payload)}`);
-            log(`JWT sub exists: ${!!(decoded && decoded.payload && decoded.payload.sub)}`);
 
             if (!decoded || !decoded.payload || !decoded.payload.sub) {
-                log('Invalid JWT structure: ' + JSON.stringify({ decoded }), true);
+                log('[Database] Invalid JWT structure: ' + JSON.stringify({ decoded }), true);
                 db.close();
                 return undefined;
             }
 
             const sub = decoded.payload.sub.toString();
-            log(`Sub value: ${sub}`);
             const userId = sub.split('|')[1];
-            log(`Extracted userId: ${userId}`);
             const sessionToken = `${userId}%3A%3A${token}`;
-            log(`Created session token, length: ${sessionToken.length}`);
+            log(`[Database] Created session token, length: ${sessionToken.length}`);
             db.close();
             return sessionToken;
         } catch (error: any) {
-            log('Error processing token: ' + error, true);
-            log('Error details: ' + JSON.stringify({
+            log('[Database] Error processing token: ' + error, true);
+            log('[Database] Error details: ' + JSON.stringify({
                 name: error.name,
                 message: error.message,
                 stack: error.stack
@@ -93,8 +87,8 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
             return undefined;
         }
     } catch (error: any) {
-        log('Error opening database: ' + error, true);
-        log('Database error details: ' + JSON.stringify({
+        log('[Database] Error opening database: ' + error, true);
+        log('[Database] Database error details: ' + JSON.stringify({
             message: error.message,
             stack: error.stack
         }), true);

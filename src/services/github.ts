@@ -4,21 +4,19 @@ import { GitHubRelease, ReleaseCheckResult } from '../interfaces/types';
 import { log } from '../utils/logger';
 import * as vscode from 'vscode';
 import { marked } from 'marked';
+import { getExtensionContext } from '../extension';
 
+const SHOWN_CHANGELOGS_KEY = 'shownChangelogs';
 
 export async function checkGitHubRelease(): Promise<ReleaseCheckResult | null> {
     try {
-        log('[GitHub] Starting release check...');
         
         // Get current version from package.json
         const packageJson = require('../../package.json');
         const currentVersion = packageJson.version;
-        log(`[GitHub] Current version: ${currentVersion}`);
 
-        log('[GitHub] Fetching releases from GitHub API...');
         const response = await axios.get('https://api.github.com/repos/dwtexe/cursor-stats/releases');
         const releases: GitHubRelease[] = response.data;
-        log(`[GitHub] Fetched ${releases.length} releases from GitHub`);
 
         if (!releases || releases.length === 0) {
             log('[GitHub] No releases found');
@@ -35,7 +33,6 @@ export async function checkGitHubRelease(): Promise<ReleaseCheckResult | null> {
         log(`[GitHub] Version comparison: ${currentVersion} -> ${latestVersion} (update available: ${hasUpdate})`);
 
         if (!hasUpdate) {
-            log('[GitHub] No update needed - current version is up to date');
             return null;
         }
 
@@ -75,27 +72,24 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 		return;
 	}
 
-	log('[GitHub] Starting periodic update check...');
 	lastReleaseCheck = now;
 	const releaseInfo = await checkGitHubRelease();
 
 	if (releaseInfo?.hasUpdate) {
-		const releaseType = releaseInfo.isPrerelease ? 'Pre-release' : 'Stable release';
-		const message = `${releaseType} ${releaseInfo.releaseName} is available! You are on ${releaseInfo.currentVersion}`;
-		log(`[GitHub] Showing update notification: ${message}`);
+		// Get the extension context
+		const context = getExtensionContext();
 		
-		const selection = await vscode.window.showInformationMessage(
-			message,
-			'View Release',
-			'View Changes',
-			'Ignore'
-		);
+		// Get previously shown changelogs
+		const shownChangelogs: string[] = context.globalState.get(SHOWN_CHANGELOGS_KEY, []);
+		
+		// Check if this version's changelog has been shown before
+		if (!shownChangelogs.includes(releaseInfo.latestVersion)) {
+			const releaseType = releaseInfo.isPrerelease ? 'Pre-release' : 'Stable release';
+			const message = `${releaseType} ${releaseInfo.releaseName} is available! You are on ${releaseInfo.currentVersion}`;
+			log(`[GitHub] Showing update notification: ${message}`);
 
-		if (selection === 'View Release') {
-			log('[GitHub] User clicked "View Release" - opening browser...');
-			vscode.env.openExternal(vscode.Uri.parse(releaseInfo.releaseUrl));
-		} else if (selection === 'View Changes') {
-			log('[GitHub] User clicked "View Changes" - showing release notes...');
+			// Show changelog directly without asking
+			log('[GitHub] Showing changelog webview...');
 			
 			const panel = vscode.window.createWebviewPanel(
 				'releaseNotes',
@@ -196,7 +190,7 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 						}
 						.download-section {
 							padding: 16px;
-                            border-top: 1px solid var(--border-subtle);
+							border-top: 1px solid var(--border-subtle);
 							border-bottom: 1px solid var(--border-subtle);
 						}
 						.download-grid {
@@ -250,7 +244,7 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 								<span class="release-tag">${releaseInfo.isPrerelease ? 'Pre-release' : 'Latest'}</span>
 							</h1>
 						</div>
-                        <div class="content">
+						<div class="content">
 							${markdownContent}
 						</div>
 						<div class="download-section">
@@ -284,10 +278,16 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 					</div>
 				</body>
 				</html>`;
+
+			// Add this version to shown changelogs
+			shownChangelogs.push(releaseInfo.latestVersion);
+			await context.globalState.update(SHOWN_CHANGELOGS_KEY, shownChangelogs);
+			log(`[GitHub] Added version ${releaseInfo.latestVersion} to shown changelogs`);
+
+			// Show a small notification that there's an update, but don't ask for action
+			vscode.window.showInformationMessage(message);
 		} else {
-			log('[GitHub] Update notification dismissed');
+			log(`[GitHub] Changelog for version ${releaseInfo.latestVersion} has already been shown`);
 		}
-	} else {
-		log('[GitHub] No updates available');
 	}
 }

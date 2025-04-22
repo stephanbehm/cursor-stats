@@ -15,11 +15,17 @@ import {
     setConsecutiveErrorCount,
     resetConsecutiveErrorCount
 } from './cooldown';
-import { createMarkdownTooltip, formatTooltipLine, getMaxLineWidth, getStatusBarColor, getUsageEmoji, createSeparator } from '../handlers/statusBar';
+import { createMarkdownTooltip, formatTooltipLine, getMaxLineWidth, getStatusBarColor, createSeparator } from '../handlers/statusBar';
 import * as vscode from 'vscode';
+import { convertAndFormatCurrency, getCurrentCurrency } from './currency';
+
+// Track unknown models to avoid repeated notifications
+let unknownModelNotificationShown = false;
+let detectedUnknownModels: Set<string> = new Set();
 
 export async function updateStats(statusBarItem: vscode.StatusBarItem) {
     try {
+        log('[Stats] ' +"=".repeat(100));
         log('[Stats] Starting stats update...');
         const token = await getCursorTokenFromDB();
        
@@ -44,7 +50,6 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         // Show status bar early to ensure visibility
         statusBarItem.show();
 
-        log('[Stats] Token retrieved successfully, fetching stats...');
         const stats = await fetchCursorStats(token).catch(async (error: any) => {
             if (error.response?.status === 401 || error.response?.status === 403) {
                 log('[Auth] Token expired or invalid, attempting to refresh...', true);
@@ -82,7 +87,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             
             // Calculate total requests from usage-based pricing
             const usageBasedRequests = items.reduce((sum, item) => {
-                const match = item.calculation.match(/(\d+)\s*\*/);
+                const match = item.calculation.match(/^(\d+)\s*\*/);
                 return sum + (match ? parseInt(match[1]) : 0);
             }, 0);
             totalRequests += usageBasedRequests;
@@ -91,7 +96,9 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 usageBasedPercent = (totalCost / usageStatus.limit) * 100;
             }
             
-            costText = ` $(credit-card) $${totalCost.toFixed(2)}`;
+            // Convert currency for status bar display
+            const formattedCost = await convertAndFormatCurrency(totalCost);
+            costText = ` $(credit-card) ${formattedCost}`;
 
             // Calculate total usage text if enabled
             const config = vscode.workspace.getConfiguration('cursorStats');
@@ -134,7 +141,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
 
         contentLines.push(
             formatTooltipLine(`   • ${stats.premiumRequests.current}/${stats.premiumRequests.limit} requests used`),
-            formatTooltipLine(`   📊 ${premiumPercentFormatted}% utilized ${getUsageEmoji(premiumPercent)}`),
+            formatTooltipLine(`   📊 ${premiumPercentFormatted}% utilized`),
             formatTooltipLine(`   Fast Requests Period: ${formatDateWithMonthName(startDate)} - ${formatDateWithMonthName(endDate)}`),
             '',
             '📈 Usage-Based Pricing'
@@ -165,35 +172,156 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             const totalCostBeforeMidMonth = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
             const unpaidAmount = totalCostBeforeMidMonth - stats.lastMonth.usageBasedPricing.midMonthPayment;
             
+            // Calculate usage percentage (always in USD)
+            const usagePercentage = usageStatus.limit ? ((totalCostBeforeMidMonth / usageStatus.limit) * 100).toFixed(1) : '0.0';
+            
+            // Convert currency for tooltip
+            const currencyCode = getCurrentCurrency();
+            const formattedTotalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
+            const formattedUnpaidAmount = await convertAndFormatCurrency(unpaidAmount);
+            const formattedLimit = await convertAndFormatCurrency(usageStatus.limit || 0);
+            
+            // Store original values for statusBar.ts to use
+            const originalUsageData = {
+                usdTotalCost: totalCostBeforeMidMonth,
+                usdLimit: usageStatus.limit || 0,
+                percentage: usagePercentage
+            };
+            
             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: $${totalCostBeforeMidMonth.toFixed(2)} - Unpaid: $${unpaidAmount.toFixed(2)})`),
+                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
+                    formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line
                     ''
                 );
             } else {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: $${totalCostBeforeMidMonth.toFixed(2)})`),
+                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost})`),
+                    formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line 
                     ''
                 );
             }
             
             for (const item of items) {
-                contentLines.push(formatTooltipLine(`   • ${item.calculation} ➜ ${item.totalDollars}`));
+                // If the item has a description, use it to provide better context
+                if (item.description) {
+                    // Extract the item type from description for better display
+                    let displayType = "";
+                    let isKnownModel = true;
+                    
+                    if (item.description.includes("tool calls")) {
+                        displayType = "Tool Calls";
+                    } else if (item.description.match(/o3-mini/i)) {
+                        displayType = "o3-mini";
+                    } else if (item.description.match(/o1\s+requests/i)) {
+                        displayType = "o1";
+                    } else if (item.description.match(/claude-3\.7-sonnet-thinking-max/i)) {
+                        displayType = "claude-3.7-sonnet-thinking-max";
+                    } else if (item.description.match(/claude-3\.7-sonnet-max/i)) {
+                        displayType = "claude-3.7-sonnet-max";
+                    } else if (item.description.match(/extra fast premium/i)) {
+                        displayType = "Fast Requests";
+                    } else if (item.description.match(/gpt-4\.5-preview/i)) {
+                        displayType = "gpt-4.5-preview";
+                    } else if (item.description.match(/gemini-2-5-pro-exp-max/i)) {
+                        displayType = "gemini-2-5-pro-exp-max";
+                    } else {
+                        // Try to extract a potential model name from the description
+                        // Look for patterns like: "X requests for MODEL_NAME"
+                        const modelMatch = item.description.match(/requests\s+(?:for|of|to)\s+([a-zA-Z0-9\-\.]+)/i);
+                        if (modelMatch && modelMatch[1]) {
+                            displayType = modelMatch[1];
+                            isKnownModel = false;
+                            
+                            // Add to our set of detected unknown models
+                            detectedUnknownModels.add(modelMatch[1]);
+                            
+                            log(`[Stats] Detected unknown model: ${modelMatch[1]} in description: "${item.description}"`, true);
+                        } else {
+                            displayType = "Requests";
+                            
+                            // Check if this might be a new model format we don't recognize
+                            if (item.description.match(/requests/i) && !item.description.includes("Mid-month")) {
+                                isKnownModel = false;
+                                log(`[Stats] Potentially unknown model format: "${item.description}"`, true);
+                                detectedUnknownModels.add(item.description);
+                            }
+                        }
+                    }
+                    
+                    // Show notification if an unknown model was found and we haven't shown it yet
+                    if (!isKnownModel && !unknownModelNotificationShown && detectedUnknownModels.size > 0) {
+                        unknownModelNotificationShown = true;
+                        
+                        const unknownModels = Array.from(detectedUnknownModels).join(", ");
+                        log(`[Stats] Showing notification for unknown models: ${unknownModels}`);
+                        
+                        vscode.window.showInformationMessage(
+                            `New Cursor model detected on api response: "${unknownModels}". Please create a report and submit it on GitHub so we can add support for this model.`,
+                            'Create Report',
+                            'Open GitHub Issues'
+                        ).then(selection => {
+                            if (selection === 'Create Report') {
+                                vscode.commands.executeCommand('cursor-stats.createReport');
+                            } else if (selection === 'Open GitHub Issues') {
+                                vscode.env.openExternal(vscode.Uri.parse('https://github.com/Dwtexe/cursor-stats/issues/new'));
+                            }
+                        });
+                    }
+                    
+                    // Convert item cost for display
+                    const itemCost = parseFloat(item.totalDollars.replace('$', ''));
+                    const formattedItemCost = await convertAndFormatCurrency(itemCost);
+                    const calculation = item.calculation.split('*')[0].trim();
+                    const rate = item.calculation.split('*')[1]?.trim() || '';
+                    
+                    // If rate exists, convert its currency too
+                    let formattedCalculation = calculation;
+                    if (rate) {
+                        const rateValue = parseFloat(rate.replace('$', ''));
+                        const formattedRate = await convertAndFormatCurrency(rateValue);
+                        formattedCalculation = `${calculation}*${formattedRate}`;
+                    } else {
+                        formattedCalculation = item.calculation;
+                    }
+                    
+                    contentLines.push(formatTooltipLine(`   • ${formattedCalculation} (${displayType}) ➜ **${formattedItemCost}**`));
+                } else {
+                    // Convert item cost for display
+                    const itemCost = parseFloat(item.totalDollars.replace('$', ''));
+                    const formattedItemCost = await convertAndFormatCurrency(itemCost);
+                    const calculation = item.calculation.split('*')[0].trim();
+                    const rate = item.calculation.split('*')[1]?.trim() || '';
+                    
+                    // If rate exists, convert its currency too
+                    let formattedCalculation = calculation;
+                    if (rate) {
+                        const rateValue = parseFloat(rate.replace('$', ''));
+                        const formattedRate = await convertAndFormatCurrency(rateValue);
+                        formattedCalculation = `${calculation}*${formattedRate}`;
+                    } else {
+                        formattedCalculation = item.calculation;
+                    }
+                    
+                    contentLines.push(formatTooltipLine(`   • ${formattedCalculation} ➜ **${formattedItemCost}**`));
+                }
             }
             
             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+                const formattedMidMonthPayment = await convertAndFormatCurrency(stats.lastMonth.usageBasedPricing.midMonthPayment);
                 contentLines.push(
                     '',
-                    formatTooltipLine(`ℹ️ You have paid $${stats.lastMonth.usageBasedPricing.midMonthPayment.toFixed(2)} of this cost already`)
+                    formatTooltipLine(`ℹ️ You have paid ${formattedMidMonthPayment} of this cost already`)
                 );
             }
 
+            const formattedFinalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
             contentLines.push(
                 '',
-                formatTooltipLine(`💳 Total Cost: $${totalCostBeforeMidMonth.toFixed(2)}`)
+                formatTooltipLine(`💳 Total Cost: ${formattedFinalCost}`)
             );
 
-            costText = ` $(credit-card) $${totalCostBeforeMidMonth.toFixed(2)}`;
+            costText = ` $(credit-card) ${formattedFinalCost}`;
 
             // Add spending notification check
             if (usageStatus.isEnabled) {
@@ -210,10 +338,13 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         const separator = createSeparator(maxWidth);
 
         // Create final tooltip content with Last Updated at the bottom
+        // Filter out the metadata line before creating the final tooltip
+        const visibleContentLines = contentLines.filter(line => !line.includes('__USD_USAGE_DATA__'));
+        
         const tooltipLines = [
             title,
             separator,
-            ...contentLines.slice(1),
+            ...visibleContentLines.slice(1),
             '',
             formatTooltipLine(`🕒 Last Updated: ${new Date().toLocaleString()}`),
         ];
@@ -223,9 +354,8 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         
         log('[Status Bar] Updating status bar with new stats...');
         statusBarItem.text = `$(graph)${totalUsageText}`;
-        statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines);
+        statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines, false, contentLines);
         statusBarItem.show();
-        log('[Status Bar] Status bar visibility updated after stats update');
         log('[Stats] Stats update completed successfully');
 
         // Show notifications after ensuring status bar is visible
