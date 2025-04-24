@@ -2,7 +2,7 @@
 
 A VS Code extension that provides real-time statistics about your Cursor usage, including premium requests and usage-based pricing information.
 
-Over 6900+ installs. Thanks for using it ❤
+Over 7000+ installs. Thanks for using it ❤
 
 ## Features
 
