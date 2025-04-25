@@ -1,152 +1,182 @@
-# Cursor Stats Extension
+# Cursor Stats
 
-A VS Code extension that provides real-time statistics about your Cursor usage, including premium requests and usage-based pricing information.
+<div align="center">
 
-Over 7000+ installs. Thanks for using it ❤
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Dwtexe.cursor-stats.svg?style=flat-square&label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Rating](https://img.shields.io/visual-studio-marketplace/r/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
-## Features
+> A powerful Cursor extension that provides real-time monitoring of your Cursor subscription usage, 
+> including fast requests and usage-based pricing information.
 
-- 🚀 Real-time monitoring of Cursor usage
-- 👥 Team usage tracking with per-user statistics
-- 📊 Premium request tracking with startOfMonth support
-- 💰 Usage-based pricing information with billing cycle awareness
-- 🔄 Smart cooldown and update mechanisms
-- 🔔 Smart notification system with configurable thresholds
-- 💸 Spending alerts with dollar amount thresholds
-- 💳 Mid-month payment tracking and invoice notifications
-- 🔒 Stripe integration for billing portal access
-- 🖥️ Focus-aware updates with optimized performance
-- 🎨 Customizable status bar display with optional colors
-- 📝 Detailed tooltips with usage statistics
-- 📈 Total request counter (fast + usage-based requests)
-- ⚡ Command palette integration
-- 🌙 Support for both regular and nightly Cursor versions
-- 🔄 Enhanced GitHub release updates with markdown support
-- 🌍 Multi-currency support
-- 📊 Progress bar visualization for usage tracking
-- 📝 Diagnostic report generation for troubleshooting
-- ⚙️ Custom database path configuration
-- 🔄 Smart model detection and notifications
+#### [Features](#-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#-installation) • [Support](#-support)
 
-## Upcoming Features
+</div>
 
-Stay tuned for these exciting new features coming soon:
+## ✨ Features
 
-- 📊 Session based request tracking
-- 📈 Visual analytics with graphs for historical request usage
-- 🎯 Project-specific request usage monitoring
-- 🎨 Dedicated activity bar section for enhanced statistics view
-- ⚙️ Enhanced customization features:
-  - Configurable quota display options
-  - Hide/show specific model statistics
-  - Customizable status bar information
-
-## Images
-
-<table>
+<table style="border: 3px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
 <tr>
-<td width="25%"><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
-<td width="25%"><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
-<td width="25%"><img src="https://github.com/user-attachments/assets/8ab6a112-3183-4d39-92c0-0bdb79c7d621" width="100%"/></td>
-<td width="25%"><img src="https://github.com/user-attachments/assets/64a88004-96e6-4c24-83cd-bddfb1b7c969" width="100%"/></td>
+<td width="33%" valign="top">
+
+#### Core Features
+- 🚀 Real-time usage monitoring
+- 👥 Team usage tracking
+- 📊 Premium request analytics
+- 💰 Usage-based pricing insights
+- 🔄 Smart cooldown system
+- 🔔 Intelligent notifications
+- 💸 Spending alerts
+- 💳 Mid-month payment tracking
+
+</td>
+<td width="33%" valign="top" style="border-left: 2px solid #ddd;">
+
+#### Advanced Features
+- 🎨 Customizable status bar
+- 📈 Progress bar visualization
+- 🌍 Multi-currency support
+- 📝 Diagnostic reporting
+- ⚡ Command palette integration
+- 🌙 Cursor Nightly version support
+- 🔄 GitHub release updates
+- 🔒 Secure token management
+
+</td>
+<td width="33%" valign="top" style="border-left: 2px solid #ddd;">
+
+#### 🔜 Upcoming Features
+- 📊 Session-based request tracking
+- 📈 Visual analytics dashboard
+- 🎯 Project-specific monitoring
+- 🎨 Enhanced statistics view
+- ⚙️ Advanced customization options
+
+</td>
+</tr>
+</table>
+<br>
+<details id="section-screenshots" style="margin-bottom: 30px;">
+<summary style="cursor: pointer"><h2 style="display: inline">📸 Screenshots</h2></summary>
+<table style="border: 3px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
+<tr>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
 </tr>
 <tr>
-<td align="center"> UI (Default)</td>
-<td align="center"> UI (Custom Currency)</td>
-<td align="center"> UI (With Progress Bars)</td>
-<td align="center"> Settings </td>
+<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Default UI</td>
+<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Custom Currency</td>
+</tr>
+<tr>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/8ab6a112-3183-4d39-92c0-0bdb79c7d621" width="100%"/></td>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/64a88004-96e6-4c24-83cd-bddfb1b7c969" width="100%"/></td>
+</tr>
+<tr>
+<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Progress Bars</td>
+<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Settings</td>
+</tr>
+</table>
+</details>
+
+<details id="section-configuration" style="margin-bottom: 30px;">
+<summary style="cursor: pointer"><h2 style="display: inline">⚙️ Configuration</h2></summary>
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `cursorStats.enableLogging` | Enable detailed logging | `false` |
+| `cursorStats.enableStatusBarColors` | Toggle colored status bar | `true` |
+| `cursorStats.enableAlerts` | Enable usage alerts | `true` |
+| `cursorStats.showTotalRequests` | Show sum of all requests instead of only fast requests | `false` |
+| `cursorStats.refreshInterval` | Update frequency (seconds) | `30` |
+| `cursorStats.currency` | Custom currency conversion | `USD` |
+| `cursorStats.showProgressBars` | Enable progress visualization | `false` |
+| `cursorStats.progressBarLength` | Progress bar length (for progress visualization) | `10` |
+| `cursorStats.customDatabasePath` | Custom path to Cursor database | `""` |
+
+</details>
+
+
+<details id="section-commands" style="margin-bottom: 30px;">
+<summary style="cursor: pointer"><h2 style="display: inline">🔧 Commands</h2></summary>
+
+| Command | Description |
+|---------|-------------|
+| `cursor-stats.refreshStats` | Manually refresh statistics |
+| `cursor-stats.openSettings` | Open extension settings |
+| `cursor-stats.setLimit` | Configure usage-based pricing settings |
+| `cursor-stats.selectCurrency` | Change display currency |
+| `cursor-stats.createReport` | Generate diagnostic report |
+
+</details>
+
+## 🚀 Installation
+
+<table style="border: 2px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
+<tr>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;">
+
+#### VS Code Marketplace
+1. Open VS Code
+2. Press `Ctrl+P` / `⌘P`
+3. Run `ext install Dwtexe.cursor-stats`
+
+Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
+
+</td>
+<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;">
+
+#### Manual Installation
+1. Download the latest `.vsix` from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
+2. Open Cursor
+3. Press `Ctrl+Shift+P` / `⌘⇧P`
+4. Run `Install from VSIX`
+5. Select the downloaded file
+
+</td>
 </tr>
 </table>
 
-## Installation
 
-### VS Code Marketplace
-
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Cursor Stats"
-4. Click Install
-
-- Or install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
-
-### Manual Installation
-
-1. Download the latest .vsix file from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
-2. Open Cursor
-3. Press Ctrl+Shift+P (Cmd+Shift+P on macOS)
-4. Type 'Install from VSIX' and select it
-5. Choose the downloaded VSIX file
-
-## Project Structure
-
-The project is organized into the following directories:
-
-```
-cursor-stats/
-└── src/
-    ├── interfaces/        # TypeScript interfaces and types
-    │   └── types.ts
-    ├── services/         # Core services for different functionalities
-    │   ├── api.ts        # API communication with Cursor servers
-    │   ├── database.ts   # SQLite database operations
-    │   ├── github.ts     # GitHub release checking
-    │   └── team.ts       # Team-related functionality
-    ├── handlers/         # UI and event handlers
-    │   ├── statusBar.ts  # Status bar UI management
-    │   └── notifications.ts # Smart notification system
-    ├── utils/            # Utility functions
-    │   ├── currency.ts   # Currency conversion utilities
-    │   ├── logger.ts     # Logging functionality
-    │   ├── cooldown.ts   # Rate limiting and cooldown management
-    │   ├── progressBars.ts # Progress bar visualization
-    │   ├── report.ts     # Diagnostic report generation
-    │   └── updateStats.ts # Statistics update handling
-    └── extension.ts      # Main extension file
-```
-
-## Configuration
-
-The extension can be configured through VS Code settings:
-
-- `cursorStats.enableLogging`: Enable detailed logging for debugging
-- `cursorStats.enableStatusBarColors`: Toggle colored status bar based on usage
-- `cursorStats.enableAlerts`: Enable usage alert notifications
-- `cursorStats.showTotalRequests`: Display total requests instead of current usage
-- `cursorStats.usageAlertThresholds`: Configure percentage thresholds for alerts
-- `cursorStats.refreshInterval`: Set update frequency
-- `cursorStats.spendingAlertThreshold`: Configure dollar amount thresholds for spending alerts
-- `cursorStats.currency`: Select display currency
-- `cursorStats.showProgressBars`: Toggle progress bar visualization
-- `cursorStats.progressBarLength`: Configure progress bar length
-- `cursorStats.progressBarWarningThreshold`: Set warning threshold for progress bars
-- `cursorStats.progressBarCriticalThreshold`: Set critical threshold for progress bars
-- `cursorStats.customDatabasePath`: Set custom path to Cursor database file
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
 
-## Support
+## 💬 Support
 
-If you encounter any issues or have suggestions, please:
-1. Check our [Known Issues](https://github.com/Dwtexe/cursor-stats/issues)
-2. Submit a new issue if needed
-3. Join the discussion in existing issues
+- 🐛 [Report Issues](https://github.com/Dwtexe/cursor-stats/issues)
+- 💡 [Feature Requests](https://github.com/Dwtexe/cursor-stats/issues/new)
 
-## Donations
+## 💝 Donations
+
 If you find this extension helpful, consider supporting its development:
 
-- **Binance ID**: `39070620`
+<details>
+<summary>Click to view donation options</summary>
 
-#### USDT
-- **Multi-Chain Address** (BEP20/ERC20/Arbitrum One/Optimism):
-  `0x88bfb527158387f8f74c5a96a0468615d06f3899`
+### Binance
+- **ID**: `39070620`
+
+### USDT
+- **Multi-Chain** (BEP20/ERC20/Arbitrum One/Optimism):
+  ```
+  0x88bfb527158387f8f74c5a96a0468615d06f3899
+  ```
 - **TRC20**:
-  `TPTnapCanmrsfcMVAyn4YiC6dLP8Wx1Czb`
+  ```
+  TPTnapCanmrsfcMVAyn4YiC6dLP8Wx1Czb
+  ```
 
-## License
+</details>
 
-[MIT](LICENSE)
+## 📄 License
+
+[MIT](LICENSE) © Dwtexe
+
+---
+
+<div align="center">
+
+Made with ❤️ by [Dwtexe](https://github.com/Dwtexe)
+
+</div>
