@@ -53,7 +53,7 @@
 </tr>
 </table>
 <br>
-<details id="section-screenshots" style="margin-bottom: 30px;">
+<details id="section-screenshots">
 <summary style="cursor: pointer"><h2 style="display: inline">📸 Screenshots</h2></summary>
 <table align="center">
 <tr>
@@ -75,7 +75,7 @@
 </table>
 </details>
 
-<details id="section-configuration" style="margin-bottom: 30px;">
+<details id="section-configuration">
 <summary style="cursor: pointer"><h2 style="display: inline">⚙️ Configuration</h2></summary>
 
 | Setting | Description | Default |
@@ -93,7 +93,7 @@
 </details>
 
 
-<details id="section-commands" style="margin-bottom: 30px;">
+<details id="section-commands">
 <summary style="cursor: pointer"><h2 style="display: inline">🔧 Commands</h2></summary>
 
 | Command | Description |
