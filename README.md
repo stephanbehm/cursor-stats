@@ -27,7 +27,7 @@
 - 💳 Mid-month payment tracking
 
 </td>
-<td width="33%" valign="top"">
+<td width="33%" valign="top">
 
 #### Advanced Features
 - 🎨 Customizable status bar
@@ -40,7 +40,7 @@
 - 🔒 Secure token management
 
 </td>
-<td width="33%" valign="top"">
+<td width="33%" valign="top">
 
 #### 🔜 Upcoming Features
 - 📊 Session-based request tracking
@@ -55,22 +55,22 @@
 <br>
 <details id="section-screenshots" style="margin-bottom: 30px;">
 <summary style="cursor: pointer"><h2 style="display: inline">📸 Screenshots</h2></summary>
-<table style="border: 3px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
+<table align="center">
 <tr>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
+<td width="50%" "><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
+<td width="50%" "><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
 </tr>
 <tr>
-<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Default UI</td>
-<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Custom Currency</td>
+<td align="center" ">Default UI</td>
+<td align="center" ">Custom Currency</td>
 </tr>
 <tr>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/8ab6a112-3183-4d39-92c0-0bdb79c7d621" width="100%"/></td>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;"><img src="https://github.com/user-attachments/assets/64a88004-96e6-4c24-83cd-bddfb1b7c969" width="100%"/></td>
+<td width="50%" "><img src="https://github.com/user-attachments/assets/8ab6a112-3183-4d39-92c0-0bdb79c7d621" width="100%"/></td>
+<td width="50%" "><img src="https://github.com/user-attachments/assets/64a88004-96e6-4c24-83cd-bddfb1b7c969" width="100%"/></td>
 </tr>
 <tr>
-<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Progress Bars</td>
-<td align="center" style="border: 3px solid #ddd; border-radius: 10px;">Settings</td>
+<td align="center" ">Progress Bars</td>
+<td align="center" ">Settings</td>
 </tr>
 </table>
 </details>
