@@ -4,8 +4,7 @@
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Dwtexe.cursor-stats.svg?style=flat-square&label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Rating](https://img.shields.io/visual-studio-marketplace/r/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
-> A powerful Cursor extension that provides real-time monitoring of your Cursor subscription usage, 
-> including fast requests and usage-based pricing information.
+> A powerful Cursor extension that provides real-time monitoring of your Cursor subscription usage, including fast requests and usage-based pricing information.
 
 #### [Features](#-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#-installation) • [Support](#-support)
 
@@ -13,7 +12,7 @@
 
 ## ✨ Features
 
-<table style="border: 3px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
+<table align="center">
 <tr>
 <td width="33%" valign="top">
 
@@ -28,7 +27,7 @@
 - 💳 Mid-month payment tracking
 
 </td>
-<td width="33%" valign="top" style="border-left: 2px solid #ddd;">
+<td width="33%" valign="top"">
 
 #### Advanced Features
 - 🎨 Customizable status bar
@@ -41,7 +40,7 @@
 - 🔒 Secure token management
 
 </td>
-<td width="33%" valign="top" style="border-left: 2px solid #ddd;">
+<td width="33%" valign="top"">
 
 #### 🔜 Upcoming Features
 - 📊 Session-based request tracking
@@ -109,9 +108,9 @@
 
 ## 🚀 Installation
 
-<table style="border: 2px solid #ddd; border-radius: 10px; overflow: hidden; table-layout: fixed; width: fit-content; margin: 0 auto;">
+<table align="center">
 <tr>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;">
+<td width="50%" valign="top">
 
 #### VS Code Marketplace
 1. Open VS Code
@@ -121,7 +120,7 @@
 Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
 </td>
-<td width="50%" style="border: 3px solid #ddd; border-radius: 10px;">
+<td width="50%" valign="top">
 
 #### Manual Installation
 1. Download the latest `.vsix` from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
