@@ -25,7 +25,7 @@
 - 🔔 Intelligent notifications
 - 💸 Spending alerts
 - 💳 Mid-month payment tracking
-
+<br>
 </td>
 <td width="33%" valign="top">
 
@@ -38,7 +38,7 @@
 - 🌙 Cursor Nightly version support
 - 🔄 GitHub release updates
 - 🔒 Secure token management
-
+<br>
 </td>
 <td width="33%" valign="top">
 
@@ -128,6 +128,7 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 3. Press `Ctrl+Shift+P` / `⌘⇧P`
 4. Run `Install from VSIX`
 5. Select the downloaded file
+<br>
 
 </td>
 </tr>
