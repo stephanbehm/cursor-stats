@@ -6,18 +6,15 @@
 >
 > including fast requests and usage-based pricing information.
 
-#### [Features](#-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#-installation) • [Support](#-support)
+#### [Features](#section-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#-installation) • [Support](#-support)
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Dwtexe.cursor-stats.svg?style=flat-square&label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Rating](https://img.shields.io/visual-studio-marketplace/r/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
 
 </div>
 
-## ✨ Features
-
-<table align="center">
-<tr>
-<td width="33%" valign="top">
+<details>
+<summary style="cursor: pointer"><h2 style="display: inline">✨ Features</h2></summary>
 
 #### Core Features
 - 🚀 Real-time usage monitoring
@@ -28,9 +25,6 @@
 - 🔔 Intelligent notifications
 - 💸 Spending alerts
 - 💳 Mid-month payment tracking
-<br>
-</td>
-<td width="33%" valign="top">
 
 #### Advanced Features
 - 🎨 Customizable status bar
@@ -41,9 +35,6 @@
 - 🌙 Cursor Nightly version support
 - 🔄 GitHub release updates
 - 🔒 Secure token management
-<br>
-</td>
-<td width="33%" valign="top">
 
 #### 🔜 Upcoming Features
 - 📊 Session-based request tracking
@@ -52,10 +43,7 @@
 - 🎨 Enhanced statistics view
 - ⚙️ Advanced customization options
 
-</td>
-</tr>
-</table>
-<br>
+</details>
 <details id="section-screenshots">
 <summary style="cursor: pointer"><h2 style="display: inline">📸 Screenshots</h2></summary>
 <table align="center">
