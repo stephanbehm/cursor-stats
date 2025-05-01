@@ -46,7 +46,6 @@ export async function generateReport(): Promise<{ reportPath: string; success: b
         
         // Extract user ID from token
         const userId = token.split('%3A%3A')[0];
-        log(`[Report] Using userId for API calls: ${userId}`);
         
         // Get current date for usage-based pricing (which renews on 2nd/3rd of each month)
         const currentDate = new Date();

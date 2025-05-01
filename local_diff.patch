@@ -1,0 +1,450 @@
+diff --git a/package.json b/package.json
+index 3fea21a..88c8d2b 100644
+--- a/package.json
++++ b/package.json
+@@ -2,7 +2,7 @@
+   "name": "cursor-stats",
+   "displayName": "Cursor Stats",
+   "description": "A Cursor extension for monitoring usage.",
+-  "version": "1.1.0",
++  "version": "1.1.1",
+   "publisher": "Dwtexe",
+   "icon": "images/icon.png",
+   "repository": {
+@@ -76,6 +76,43 @@
+             "description": "Enable colored status bar based on usage percentage.",
+             "scope": "window"
+           },
++          "cursorStats.statusBarColorThresholds": {
++            "type": "array",
++            "description": "Customize status bar text color based on usage percentage. Define thresholds (min percentage) and colors (theme ID or hex). Defaults replicate original behavior.",
++            "scope": "window",
++            "default": [
++              { "percentage": 95, "color": "#CC0000" },
++              { "percentage": 90, "color": "#FF3333" },
++              { "percentage": 85, "color": "#FF4D4D" },
++              { "percentage": 80, "color": "#FF6600" },
++              { "percentage": 75, "color": "#FF8800" },
++              { "percentage": 70, "color": "#FFAA00" },
++              { "percentage": 65, "color": "#FFCC00" },
++              { "percentage": 60, "color": "#FFE066" },
++              { "percentage": 50, "color": "#DCE775" },
++              { "percentage": 40, "color": "#66BB6A" },
++              { "percentage": 30, "color": "#81C784" },
++              { "percentage": 20, "color": "#B3E6B3" },
++              { "percentage": 10, "color": "#E8F5E9" },
++              { "percentage": 0, "color": "#FFFFFF" } 
++            ],
++            "items": {
++              "type": "object",
++              "required": ["percentage", "color"],
++              "properties": {
++                "percentage": {
++                  "type": "number",
++                  "description": "Minimum percentage threshold (0-100).",
++                  "minimum": 0,
++                  "maximum": 100
++                },
++                "color": {
++                  "type": "string",
++                  "description": "Color to use. Can be a theme color ID (e.g., 'charts.red', 'statusBarItem.foreground') or a hex color code (e.g., '#FF0000')."
++                }
++              }
++            }
++          },
+           "cursorStats.enableAlerts": {
+             "type": "boolean",
+             "default": true,
+diff --git a/src/handlers/statusBar.ts b/src/handlers/statusBar.ts
+index 95417bb..1608b43 100644
+--- a/src/handlers/statusBar.ts
++++ b/src/handlers/statusBar.ts
+@@ -8,6 +8,12 @@ import { shouldShowProgressBars, createPeriodProgressBar, createUsageProgressBar
+ 
+ let statusBarItem: vscode.StatusBarItem;
+ 
++// Define the structure for custom color thresholds
++interface ColorThreshold {
++    percentage: number;
++    color: string; // Can be a theme color ID or a hex code
++}
++
+ export function createStatusBarItem(): vscode.StatusBarItem {
+     log('[Status Bar] Creating status bar item...');
+     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+@@ -230,19 +236,26 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean =
+                 }
+                 
+                 // Show usage details regardless of enabled/disabled status
+-                const pricingLines = lines.filter(line => (line.includes('*') || line.includes('→')) && line.includes('➜'));
++                // Filter out the mid-month payment item before displaying
++                const pricingLines = lines.filter(line => 
++                    (line.includes('*') || line.includes('→')) && 
++                    line.includes('➜') &&
++                    !line.includes('Mid-month payment:') // Exclude the mid-month payment line item
++                );
++
+                 if (pricingLines.length > 0) {
+                     // Find mid-month payment from the lines directly
+-                    const midMonthPaymentLine = lines.find(line => line.includes('Mid-month payment:'));
++                    const informationalMidMonthLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
+                     let midMonthPayment = 0;
+                     let formattedMidMonthPayment = '';
+                     
+-                    if (midMonthPaymentLine) {
+-                        // Extract the payment amount, regardless of currency format
+-                        const paymentMatch = midMonthPaymentLine.match(/[^0-9]*([0-9.,]+)/);
++                    if (informationalMidMonthLine) {
++                        // Extract the payment amount from the informational line
++                        const paymentMatch = informationalMidMonthLine.match(/paid ([^ ]+)/); // Match the amount after "paid "
+                         if (paymentMatch && paymentMatch[1]) {
+-                            midMonthPayment = parseFloat(paymentMatch[1].replace(/[^0-9.]/g, ''));
+-                            formattedMidMonthPayment = midMonthPaymentLine.split('paid ')[1].split(' of')[0];
++                            formattedMidMonthPayment = paymentMatch[1];
++                            // Attempt to parse the numerical value, removing currency symbols/commas
++                            midMonthPayment = parseFloat(formattedMidMonthPayment.replace(/[^0-9.]/g, '')) || 0;
+                         }
+                     }
+                     
+@@ -253,12 +266,13 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean =
+                         tooltip.appendMarkdown(`• ${line.replace('•', '').trim()}\n\n`);
+                     });
+ 
+-                    // Add mid-month payment message if it exists
+-                    if (midMonthPaymentLine) {
++                    // Add mid-month payment message if it exists (using the found informational line)
++                    if (informationalMidMonthLine) {
+                         const formattedUnpaidAmount = lines.find(line => line.includes('Unpaid:'))?.split('Unpaid:')[1].trim() || 
+                                                       await convertAndFormatCurrency(unpaidAmount);
+                         
+-                        tooltip.appendMarkdown(`> ℹ️ You have paid ${formattedMidMonthPayment} of this cost already. (Unpaid: ${formattedUnpaidAmount})\n\n`);
++                        // Use the already formatted informational line, just add the unpaid part dynamically
++                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (Unpaid: ${formattedUnpaidAmount})\n\n`);
+                     }
+                 } else {
+                     tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
+@@ -294,43 +308,65 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean =
+     return tooltip;
+ }
+ 
+-export function getStatusBarColor(percentage: number): vscode.ThemeColor {
+-    // Check if status bar colors are enabled in settings
++export function getStatusBarColor(percentage: number): vscode.ThemeColor | string {
+     const config = vscode.workspace.getConfiguration('cursorStats');
+     const colorsEnabled = config.get<boolean>('enableStatusBarColors', true);
+-    
++    const customThresholds = config.get<ColorThreshold[]>('statusBarColorThresholds');
++
++    const defaultColor: vscode.ThemeColor | string = new vscode.ThemeColor('statusBarItem.foreground'); // Default color if disabled or no match
++
+     if (!colorsEnabled) {
+-        return new vscode.ThemeColor('statusBarItem.foreground');
+-    } 
++        return defaultColor;
++    }
++
++    if (customThresholds && customThresholds.length > 0) {
++        // Sort thresholds in descending order of percentage
++        const sortedThresholds = [...customThresholds].sort((a, b) => b.percentage - a.percentage);
++
++        // Find the first threshold that the percentage meets or exceeds
++        const matchedThreshold = sortedThresholds.find(threshold => percentage >= threshold.percentage);
++
++        if (matchedThreshold) {
++            // Check if the color is a hex code or a theme color ID
++            if (matchedThreshold.color.startsWith('#')) {
++                return matchedThreshold.color; // Return hex string directly
++            } else {
++                return new vscode.ThemeColor(matchedThreshold.color); // Return ThemeColor instance
++            }
++        }
++    }
+ 
++    // Fallback to original hardcoded logic if no custom thresholds or no match found
++    // (Or return a default color - let's stick to the original logic as fallback for now)
+     if (percentage >= 95) {
+-        return new vscode.ThemeColor('charts.red');
++        return "#CC0000";
+     } else if (percentage >= 90) {
+-        return new vscode.ThemeColor('errorForeground');
++        return "#FF3333";
+     } else if (percentage >= 85) {
+-        return new vscode.ThemeColor('testing.iconFailed');
++        return "#FF4D4D";
+     } else if (percentage >= 80) {
+-        return new vscode.ThemeColor('notebookStatusErrorIcon.foreground');
++        return "#FF6600";
+     } else if (percentage >= 75) {
+-        return new vscode.ThemeColor('charts.yellow');
++        return "#FF8800";
+     } else if (percentage >= 70) {
+-        return new vscode.ThemeColor('notificationsWarningIcon.foreground');
++        return "#FFAA00";
+     } else if (percentage >= 65) {
+-        return new vscode.ThemeColor('charts.orange');
++        return "#FFCC00";
+     } else if (percentage >= 60) {
+-        return new vscode.ThemeColor('charts.blue');
++        return "#FFE066";
+     } else if (percentage >= 50) {
+-        return new vscode.ThemeColor('charts.green');
++        return "#DCE775";
+     } else if (percentage >= 40) {
+-        return new vscode.ThemeColor('testing.iconPassed');
++        return "#66BB6A";
+     } else if (percentage >= 30) {
+-        return new vscode.ThemeColor('terminal.ansiGreen');
++        return "#81C784";
+     } else if (percentage >= 20) {
+-        return new vscode.ThemeColor('symbolIcon.classForeground');
++        return "#B3E6B3";
+     } else if (percentage >= 10) {
+-        return new vscode.ThemeColor('debugIcon.startForeground');
++        return "#E8F5E9";
+     } else {
+-        return new vscode.ThemeColor('foreground');
++        // If percentage is below all custom/default thresholds, use the default color
++        return "#FFFFFF"; 
+     }
+ }
+ 
+diff --git a/src/services/team.ts b/src/services/team.ts
+index e06256b..8ace50b 100644
+--- a/src/services/team.ts
++++ b/src/services/team.ts
+@@ -10,7 +10,6 @@ const CACHE_FILE_NAME = 'user-cache.json';
+ 
+ export async function getUserCachePath(context: vscode.ExtensionContext): Promise<string> {
+     const cachePath = path.join(context.extensionPath, CACHE_FILE_NAME);
+-    log('[Team] Cache file path', cachePath);
+     return cachePath;
+ }
+ 
+diff --git a/src/utils/report.ts b/src/utils/report.ts
+index 2d362be..2b02163 100644
+--- a/src/utils/report.ts
++++ b/src/utils/report.ts
+@@ -46,7 +46,6 @@ export async function generateReport(): Promise<{ reportPath: string; success: b
+         
+         // Extract user ID from token
+         const userId = token.split('%3A%3A')[0];
+-        log(`[Report] Using userId for API calls: ${userId}`);
+         
+         // Get current date for usage-based pricing (which renews on 2nd/3rd of each month)
+         const currentDate = new Date();
+diff --git a/src/utils/updateStats.ts b/src/utils/updateStats.ts
+index 71b7739..37f6ec7 100644
+--- a/src/utils/updateStats.ts
++++ b/src/utils/updateStats.ts
+@@ -82,22 +82,33 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+ 
+         if (stats.lastMonth.usageBasedPricing.items.length > 0) {
+             const items = stats.lastMonth.usageBasedPricing.items;
+-            const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+             
+-            // Calculate total requests from usage-based pricing
++            // Calculate actual total cost (sum of positive items only)
++            const actualTotalCost = items.reduce((sum, item) => {
++                const cost = parseFloat(item.totalDollars.replace('$', ''));
++                // Only add positive costs (ignore mid-month payment credits)
++                return cost > 0 ? sum + cost : sum;
++            }, 0);
++
++            // Calculate total requests from usage-based pricing (needed for status bar text)
+             const usageBasedRequests = items.reduce((sum, item) => {
+-                const match = item.calculation.match(/^(\d+)\s*\*/);
+-                return sum + (match ? parseInt(match[1]) : 0);
++                // Only count requests from positive cost items
++                if (parseFloat(item.totalDollars.replace('$', '')) > 0) {
++                    const match = item.calculation.match(/^(\d+)\s*\*/);
++                    return sum + (match ? parseInt(match[1]) : 0);
++                }
++                return sum;
+             }, 0);
+             totalRequests += usageBasedRequests;
+             
++            // Calculate usage percentage based on actual total cost (always in USD)
+             if (usageStatus.isEnabled && usageStatus.limit) {
+-                usageBasedPercent = (totalCost / usageStatus.limit) * 100;
++                usageBasedPercent = (actualTotalCost / usageStatus.limit) * 100;
+             }
+             
+-            // Convert currency for status bar display
+-            const formattedCost = await convertAndFormatCurrency(totalCost);
+-            costText = ` $(credit-card) ${formattedCost}`;
++            // Convert actual cost currency for status bar display
++            const formattedActualCost = await convertAndFormatCurrency(actualTotalCost);
++            costText = ` $(credit-card) ${formattedActualCost}`;
+ 
+             // Calculate total usage text if enabled
+             const config = vscode.workspace.getConfiguration('cursorStats');
+@@ -113,7 +124,6 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+         }
+ 
+         // Set status bar color based on usage type
+-        // Always use premium percentage unless it's exhausted and usage-based is enabled
+         const usagePercent = premiumPercent < 100 ? premiumPercent : 
+                             (usageStatus.isEnabled ? usageBasedPercent : premiumPercent);
+         statusBarItem.color = getStatusBarColor(usagePercent);
+@@ -148,8 +158,12 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+         
+         if (stats.lastMonth.usageBasedPricing.items.length > 0) {
+             const items = stats.lastMonth.usageBasedPricing.items;
+-            // Calculate total cost without including the mid-month payment in the sum
+-            let totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
++
++            // Calculate actual total cost (sum of positive items only)
++            const actualTotalCost = items.reduce((sum, item) => {
++                const cost = parseFloat(item.totalDollars.replace('$', ''));
++                return cost > 0 ? sum + cost : sum;
++            }, 0);
+             
+             // Calculate usage-based pricing period
+             const billingDay = 3;
+@@ -157,7 +171,6 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+             let periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay);
+             let periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, billingDay - 1);
+             
+-            // If we're before the billing day, adjust the period to the previous month
+             if (currentDate.getDate() < billingDay) {
+                 periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, billingDay);
+                 periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay - 1);
+@@ -167,41 +180,45 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+                 formatTooltipLine(`   Usage Based Period: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
+             );
+             
+-            // Add total cost header with unpaid amount if there's a mid-month payment
+-            const totalCostBeforeMidMonth = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+-            const unpaidAmount = totalCostBeforeMidMonth - stats.lastMonth.usageBasedPricing.midMonthPayment;
++            // Calculate unpaid amount correctly
++            const unpaidAmount = Math.max(0, actualTotalCost - stats.lastMonth.usageBasedPricing.midMonthPayment);
+             
+-            // Calculate usage percentage (always in USD)
+-            const usagePercentage = usageStatus.limit ? ((totalCostBeforeMidMonth / usageStatus.limit) * 100).toFixed(1) : '0.0';
++            // Calculate usage percentage based on actual total cost (always in USD)
++            const usagePercentage = usageStatus.limit ? ((actualTotalCost / usageStatus.limit) * 100).toFixed(1) : '0.0';
+             
+             // Convert currency for tooltip
+             const currencyCode = getCurrentCurrency();
+-            const formattedTotalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
++            const formattedActualTotalCost = await convertAndFormatCurrency(actualTotalCost);
+             const formattedUnpaidAmount = await convertAndFormatCurrency(unpaidAmount);
+             const formattedLimit = await convertAndFormatCurrency(usageStatus.limit || 0);
+             
+-            // Store original values for statusBar.ts to use
++            // Store original values for statusBar.ts to use, using actual total cost
+             const originalUsageData = {
+-                usdTotalCost: totalCostBeforeMidMonth,
++                usdTotalCost: actualTotalCost, // Use actual cost here
+                 usdLimit: usageStatus.limit || 0,
+                 percentage: usagePercentage
+             };
+             
+             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+                 contentLines.push(
+-                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
++                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
+                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line
+                     ''
+                 );
+             } else {
+                 contentLines.push(
+-                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost})`),
++                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost})`),
+                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line 
+                     ''
+                 );
+             }
+             
+             for (const item of items) {
++                // Skip mid-month payment line item from the detailed list
++                if (item.description?.includes('Mid-month usage paid')) {
++                    continue;
++                }
++
+                 // If the item has a description, use it to provide better context
+                 if (item.description) {
+                     // Extract the item type from description for better display
+@@ -224,26 +241,36 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+                         displayType = "gpt-4.5-preview";
+                     } else if (item.description.match(/gemini-2-5-pro-exp-max/i)) {
+                         displayType = "gemini-2-5-pro-exp-max";
++                    } else if (item.description.match(/^\d+\s+o3\s+request/i)) {
++                        displayType = "o3";
+                     } else {
+-                        // Try to extract a potential model name from the description
+-                        // Look for patterns like: "X requests for MODEL_NAME"
+-                        const modelMatch = item.description.match(/requests\s+(?:for|of|to)\s+([a-zA-Z0-9\-\.]+)/i);
++                        // Try to extract a potential model name using a broader pattern
++                        // Matches "NUMBER MODEL_NAME requests *"
++                        const modelMatch = item.description.match(/^\d+\s+([a-zA-Z0-9\-\.]+)\s+requests?\b/i);
+                         if (modelMatch && modelMatch[1]) {
+-                            displayType = modelMatch[1];
+-                            isKnownModel = false;
+-                            
+-                            // Add to our set of detected unknown models
+-                            detectedUnknownModels.add(modelMatch[1]);
+-                            
+-                            log(`[Stats] Detected unknown model: ${modelMatch[1]} in description: "${item.description}"`, true);
++                            const potentialModelName = modelMatch[1];
++                            // Check if it's not one we already handle explicitly (avoids double counting)
++                            const knownModels = ['o3-mini', 'o1', 'claude-3.7-sonnet-thinking-max', 'claude-3.7-sonnet-max', 'gpt-4.5-preview', 'gemini-2-5-pro-exp-max'];
++                            if (!knownModels.some(known => potentialModelName.toLowerCase().includes(known.toLowerCase()))) {
++                                displayType = potentialModelName; // Display the extracted name
++                                isKnownModel = false;
++                                // Add the extracted model name to our set
++                                detectedUnknownModels.add(potentialModelName);
++                                log(`[Stats] Detected potentially unknown model: ${potentialModelName} in description: "${item.description}"`, true);
++                            } else {
++                                // It matched a known model structure but wasn't caught by specific checks? Log for debugging.
++                                log(`[Debug] Model matched generic pattern but might be known: ${potentialModelName}`);
++                                displayType = potentialModelName; // Still display it
++                            }
+                         } else {
+-                            displayType = "Requests";
+-                            
+-                            // Check if this might be a new model format we don't recognize
++                            displayType = "Requests"; // Fallback display type
++
++                            // If it contains 'requests' and isn't 'Mid-month', flag it as potentially unknown for notification
+                             if (item.description.match(/requests/i) && !item.description.includes("Mid-month")) {
+                                 isKnownModel = false;
+-                                log(`[Stats] Potentially unknown model format: "${item.description}"`, true);
+-                                detectedUnknownModels.add(item.description);
++                                // Add the whole description as a fallback identifier if extraction failed
++                                detectedUnknownModels.add(`Unknown format: ${item.description}`);
++                                log(`[Stats] Potentially unknown model format (extraction failed): "${item.description}"`, true);
+                             }
+                         }
+                     }
+@@ -305,7 +332,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+                     contentLines.push(formatTooltipLine(`   • ${formattedCalculation} ➜ **${formattedItemCost}**`));
+                 }
+             }
+-            
++
+             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+                 const formattedMidMonthPayment = await convertAndFormatCurrency(stats.lastMonth.usageBasedPricing.midMonthPayment);
+                 contentLines.push(
+@@ -314,18 +341,19 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
+                 );
+             }
+ 
+-            const formattedFinalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
++            const formattedFinalCost = await convertAndFormatCurrency(actualTotalCost);
+             contentLines.push(
+                 '',
+                 formatTooltipLine(`💳 Total Cost: ${formattedFinalCost}`)
+             );
+ 
++            // Update costText for status bar here, using actual total cost
+             costText = ` $(credit-card) ${formattedFinalCost}`;
+ 
+             // Add spending notification check
+             if (usageStatus.isEnabled) {
+                 setTimeout(() => {
+-                    checkAndNotifySpending(totalCostBeforeMidMonth);
++                    checkAndNotifySpending(actualTotalCost); // Check spending based on actual total cost
+                 }, 1000);
+             }
+         } else {

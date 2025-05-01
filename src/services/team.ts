@@ -10,7 +10,6 @@ const CACHE_FILE_NAME = 'user-cache.json';
 
 export async function getUserCachePath(context: vscode.ExtensionContext): Promise<string> {
     const cachePath = path.join(context.extensionPath, CACHE_FILE_NAME);
-    log('[Team] Cache file path', cachePath);
     return cachePath;
 }
 

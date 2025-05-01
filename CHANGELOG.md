@@ -19,6 +19,17 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.1.1] - 2025-05-01
+
+### Added
+- 🎨 Added a new setting `cursorStats.statusBarColorThresholds` to allow customizing status bar text color based on usage percentage thresholds.
+
+### Changed
+- ✨ Improved usage-based pricing calculations to more accurately reflect costs, particularly by excluding mid-month payment credits from total cost and usage percentage calculations.
+- 📊 Modified the tooltip display to filter out the mid-month payment item from the detailed list and clarify the unpaid amount calculation.
+- 🔎 Enhanced detection and display of potentially unknown models in the usage details tooltip.
+- 🧹 Removed minor redundant log statements.
+
 ## [1.1.0] - 2025-04-22
 
 ### Added

@@ -82,22 +82,33 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
 
         if (stats.lastMonth.usageBasedPricing.items.length > 0) {
             const items = stats.lastMonth.usageBasedPricing.items;
-            const totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
             
-            // Calculate total requests from usage-based pricing
+            // Calculate actual total cost (sum of positive items only)
+            const actualTotalCost = items.reduce((sum, item) => {
+                const cost = parseFloat(item.totalDollars.replace('$', ''));
+                // Only add positive costs (ignore mid-month payment credits)
+                return cost > 0 ? sum + cost : sum;
+            }, 0);
+
+            // Calculate total requests from usage-based pricing (needed for status bar text)
             const usageBasedRequests = items.reduce((sum, item) => {
-                const match = item.calculation.match(/^(\d+)\s*\*/);
-                return sum + (match ? parseInt(match[1]) : 0);
+                // Only count requests from positive cost items
+                if (parseFloat(item.totalDollars.replace('$', '')) > 0) {
+                    const match = item.calculation.match(/^(\d+)\s*\*/);
+                    return sum + (match ? parseInt(match[1]) : 0);
+                }
+                return sum;
             }, 0);
             totalRequests += usageBasedRequests;
             
+            // Calculate usage percentage based on actual total cost (always in USD)
             if (usageStatus.isEnabled && usageStatus.limit) {
-                usageBasedPercent = (totalCost / usageStatus.limit) * 100;
+                usageBasedPercent = (actualTotalCost / usageStatus.limit) * 100;
             }
             
-            // Convert currency for status bar display
-            const formattedCost = await convertAndFormatCurrency(totalCost);
-            costText = ` $(credit-card) ${formattedCost}`;
+            // Convert actual cost currency for status bar display
+            const formattedActualCost = await convertAndFormatCurrency(actualTotalCost);
+            costText = ` $(credit-card) ${formattedActualCost}`;
 
             // Calculate total usage text if enabled
             const config = vscode.workspace.getConfiguration('cursorStats');
@@ -113,7 +124,6 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         }
 
         // Set status bar color based on usage type
-        // Always use premium percentage unless it's exhausted and usage-based is enabled
         const usagePercent = premiumPercent < 100 ? premiumPercent : 
                             (usageStatus.isEnabled ? usageBasedPercent : premiumPercent);
         statusBarItem.color = getStatusBarColor(usagePercent);
@@ -148,8 +158,12 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         
         if (stats.lastMonth.usageBasedPricing.items.length > 0) {
             const items = stats.lastMonth.usageBasedPricing.items;
-            // Calculate total cost without including the mid-month payment in the sum
-            let totalCost = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
+
+            // Calculate actual total cost (sum of positive items only)
+            const actualTotalCost = items.reduce((sum, item) => {
+                const cost = parseFloat(item.totalDollars.replace('$', ''));
+                return cost > 0 ? sum + cost : sum;
+            }, 0);
             
             // Calculate usage-based pricing period
             const billingDay = 3;
@@ -157,7 +171,6 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             let periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay);
             let periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, billingDay - 1);
             
-            // If we're before the billing day, adjust the period to the previous month
             if (currentDate.getDate() < billingDay) {
                 periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, billingDay);
                 periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay - 1);
@@ -167,41 +180,45 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 formatTooltipLine(`   Usage Based Period: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
             );
             
-            // Add total cost header with unpaid amount if there's a mid-month payment
-            const totalCostBeforeMidMonth = items.reduce((sum, item) => sum + parseFloat(item.totalDollars.replace('$', '')), 0);
-            const unpaidAmount = totalCostBeforeMidMonth - stats.lastMonth.usageBasedPricing.midMonthPayment;
+            // Calculate unpaid amount correctly
+            const unpaidAmount = Math.max(0, actualTotalCost - stats.lastMonth.usageBasedPricing.midMonthPayment);
             
-            // Calculate usage percentage (always in USD)
-            const usagePercentage = usageStatus.limit ? ((totalCostBeforeMidMonth / usageStatus.limit) * 100).toFixed(1) : '0.0';
+            // Calculate usage percentage based on actual total cost (always in USD)
+            const usagePercentage = usageStatus.limit ? ((actualTotalCost / usageStatus.limit) * 100).toFixed(1) : '0.0';
             
             // Convert currency for tooltip
             const currencyCode = getCurrentCurrency();
-            const formattedTotalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
+            const formattedActualTotalCost = await convertAndFormatCurrency(actualTotalCost);
             const formattedUnpaidAmount = await convertAndFormatCurrency(unpaidAmount);
             const formattedLimit = await convertAndFormatCurrency(usageStatus.limit || 0);
             
-            // Store original values for statusBar.ts to use
+            // Store original values for statusBar.ts to use, using actual total cost
             const originalUsageData = {
-                usdTotalCost: totalCostBeforeMidMonth,
+                usdTotalCost: actualTotalCost, // Use actual cost here
                 usdLimit: usageStatus.limit || 0,
                 percentage: usagePercentage
             };
             
             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
+                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line
                     ''
                 );
             } else {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: ${formattedTotalCost})`),
+                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost})`),
                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line 
                     ''
                 );
             }
             
             for (const item of items) {
+                // Skip mid-month payment line item from the detailed list
+                if (item.description?.includes('Mid-month usage paid')) {
+                    continue;
+                }
+
                 // If the item has a description, use it to provide better context
                 if (item.description) {
                     // Extract the item type from description for better display
@@ -224,26 +241,36 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                         displayType = "gpt-4.5-preview";
                     } else if (item.description.match(/gemini-2-5-pro-exp-max/i)) {
                         displayType = "gemini-2-5-pro-exp-max";
+                    } else if (item.description.match(/^\d+\s+o3\s+request/i)) {
+                        displayType = "o3";
                     } else {
-                        // Try to extract a potential model name from the description
-                        // Look for patterns like: "X requests for MODEL_NAME"
-                        const modelMatch = item.description.match(/requests\s+(?:for|of|to)\s+([a-zA-Z0-9\-\.]+)/i);
+                        // Try to extract a potential model name using a broader pattern
+                        // Matches "NUMBER MODEL_NAME requests *"
+                        const modelMatch = item.description.match(/^\d+\s+([a-zA-Z0-9\-\.]+)\s+requests?\b/i);
                         if (modelMatch && modelMatch[1]) {
-                            displayType = modelMatch[1];
-                            isKnownModel = false;
-                            
-                            // Add to our set of detected unknown models
-                            detectedUnknownModels.add(modelMatch[1]);
-                            
-                            log(`[Stats] Detected unknown model: ${modelMatch[1]} in description: "${item.description}"`, true);
+                            const potentialModelName = modelMatch[1];
+                            // Check if it's not one we already handle explicitly (avoids double counting)
+                            const knownModels = ['o3-mini', 'o1', 'claude-3.7-sonnet-thinking-max', 'claude-3.7-sonnet-max', 'gpt-4.5-preview', 'gemini-2-5-pro-exp-max'];
+                            if (!knownModels.some(known => potentialModelName.toLowerCase().includes(known.toLowerCase()))) {
+                                displayType = potentialModelName; // Display the extracted name
+                                isKnownModel = false;
+                                // Add the extracted model name to our set
+                                detectedUnknownModels.add(potentialModelName);
+                                log(`[Stats] Detected potentially unknown model: ${potentialModelName} in description: "${item.description}"`, true);
+                            } else {
+                                // It matched a known model structure but wasn't caught by specific checks? Log for debugging.
+                                log(`[Debug] Model matched generic pattern but might be known: ${potentialModelName}`);
+                                displayType = potentialModelName; // Still display it
+                            }
                         } else {
-                            displayType = "Requests";
-                            
-                            // Check if this might be a new model format we don't recognize
+                            displayType = "Requests"; // Fallback display type
+
+                            // If it contains 'requests' and isn't 'Mid-month', flag it as potentially unknown for notification
                             if (item.description.match(/requests/i) && !item.description.includes("Mid-month")) {
                                 isKnownModel = false;
-                                log(`[Stats] Potentially unknown model format: "${item.description}"`, true);
-                                detectedUnknownModels.add(item.description);
+                                // Add the whole description as a fallback identifier if extraction failed
+                                detectedUnknownModels.add(`Unknown format: ${item.description}`);
+                                log(`[Stats] Potentially unknown model format (extraction failed): "${item.description}"`, true);
                             }
                         }
                     }
@@ -305,7 +332,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                     contentLines.push(formatTooltipLine(`   • ${formattedCalculation} ➜ **${formattedItemCost}**`));
                 }
             }
-            
+
             if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
                 const formattedMidMonthPayment = await convertAndFormatCurrency(stats.lastMonth.usageBasedPricing.midMonthPayment);
                 contentLines.push(
@@ -314,18 +341,19 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 );
             }
 
-            const formattedFinalCost = await convertAndFormatCurrency(totalCostBeforeMidMonth);
+            const formattedFinalCost = await convertAndFormatCurrency(actualTotalCost);
             contentLines.push(
                 '',
                 formatTooltipLine(`💳 Total Cost: ${formattedFinalCost}`)
             );
 
+            // Update costText for status bar here, using actual total cost
             costText = ` $(credit-card) ${formattedFinalCost}`;
 
             // Add spending notification check
             if (usageStatus.isEnabled) {
                 setTimeout(() => {
-                    checkAndNotifySpending(totalCostBeforeMidMonth);
+                    checkAndNotifySpending(actualTotalCost); // Check spending based on actual total cost
                 }, 1000);
             }
         } else {

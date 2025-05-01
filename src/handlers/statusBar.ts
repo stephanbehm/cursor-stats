@@ -8,6 +8,12 @@ import { shouldShowProgressBars, createPeriodProgressBar, createUsageProgressBar
 
 let statusBarItem: vscode.StatusBarItem;
 
+// Define the structure for custom color thresholds
+interface ColorThreshold {
+    percentage: number;
+    color: string; // Can be a theme color ID or a hex code
+}
+
 export function createStatusBarItem(): vscode.StatusBarItem {
     log('[Status Bar] Creating status bar item...');
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -230,19 +236,26 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                 }
                 
                 // Show usage details regardless of enabled/disabled status
-                const pricingLines = lines.filter(line => (line.includes('*') || line.includes('→')) && line.includes('➜'));
+                // Filter out the mid-month payment item before displaying
+                const pricingLines = lines.filter(line => 
+                    (line.includes('*') || line.includes('→')) && 
+                    line.includes('➜') &&
+                    !line.includes('Mid-month payment:') // Exclude the mid-month payment line item
+                );
+
                 if (pricingLines.length > 0) {
                     // Find mid-month payment from the lines directly
-                    const midMonthPaymentLine = lines.find(line => line.includes('Mid-month payment:'));
+                    const informationalMidMonthLine = lines.find(line => line.includes('You have paid') && line.includes('of this cost already'));
                     let midMonthPayment = 0;
                     let formattedMidMonthPayment = '';
                     
-                    if (midMonthPaymentLine) {
-                        // Extract the payment amount, regardless of currency format
-                        const paymentMatch = midMonthPaymentLine.match(/[^0-9]*([0-9.,]+)/);
+                    if (informationalMidMonthLine) {
+                        // Extract the payment amount from the informational line
+                        const paymentMatch = informationalMidMonthLine.match(/paid ([^ ]+)/); // Match the amount after "paid "
                         if (paymentMatch && paymentMatch[1]) {
-                            midMonthPayment = parseFloat(paymentMatch[1].replace(/[^0-9.]/g, ''));
-                            formattedMidMonthPayment = midMonthPaymentLine.split('paid ')[1].split(' of')[0];
+                            formattedMidMonthPayment = paymentMatch[1];
+                            // Attempt to parse the numerical value, removing currency symbols/commas
+                            midMonthPayment = parseFloat(formattedMidMonthPayment.replace(/[^0-9.]/g, '')) || 0;
                         }
                     }
                     
@@ -253,12 +266,13 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                         tooltip.appendMarkdown(`• ${line.replace('•', '').trim()}\n\n`);
                     });
 
-                    // Add mid-month payment message if it exists
-                    if (midMonthPaymentLine) {
+                    // Add mid-month payment message if it exists (using the found informational line)
+                    if (informationalMidMonthLine) {
                         const formattedUnpaidAmount = lines.find(line => line.includes('Unpaid:'))?.split('Unpaid:')[1].trim() || 
                                                       await convertAndFormatCurrency(unpaidAmount);
                         
-                        tooltip.appendMarkdown(`> ℹ️ You have paid ${formattedMidMonthPayment} of this cost already. (Unpaid: ${formattedUnpaidAmount})\n\n`);
+                        // Use the already formatted informational line, just add the unpaid part dynamically
+                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (Unpaid: ${formattedUnpaidAmount})\n\n`);
                     }
                 } else {
                     tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
@@ -294,43 +308,65 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
     return tooltip;
 }
 
-export function getStatusBarColor(percentage: number): vscode.ThemeColor {
-    // Check if status bar colors are enabled in settings
+export function getStatusBarColor(percentage: number): vscode.ThemeColor | string {
     const config = vscode.workspace.getConfiguration('cursorStats');
     const colorsEnabled = config.get<boolean>('enableStatusBarColors', true);
-    
-    if (!colorsEnabled) {
-        return new vscode.ThemeColor('statusBarItem.foreground');
-    } 
+    const customThresholds = config.get<ColorThreshold[]>('statusBarColorThresholds');
 
+    const defaultColor: vscode.ThemeColor | string = new vscode.ThemeColor('statusBarItem.foreground'); // Default color if disabled or no match
+
+    if (!colorsEnabled) {
+        return defaultColor;
+    }
+
+    if (customThresholds && customThresholds.length > 0) {
+        // Sort thresholds in descending order of percentage
+        const sortedThresholds = [...customThresholds].sort((a, b) => b.percentage - a.percentage);
+
+        // Find the first threshold that the percentage meets or exceeds
+        const matchedThreshold = sortedThresholds.find(threshold => percentage >= threshold.percentage);
+
+        if (matchedThreshold) {
+            // Check if the color is a hex code or a theme color ID
+            if (matchedThreshold.color.startsWith('#')) {
+                return matchedThreshold.color; // Return hex string directly
+            } else {
+                return new vscode.ThemeColor(matchedThreshold.color); // Return ThemeColor instance
+            }
+        }
+    }
+
+    // Fallback to original hardcoded logic if no custom thresholds or no match found
+    // (Or return a default color - let's stick to the original logic as fallback for now)
     if (percentage >= 95) {
-        return new vscode.ThemeColor('charts.red');
+        return "#CC0000";
     } else if (percentage >= 90) {
-        return new vscode.ThemeColor('errorForeground');
+        return "#FF3333";
     } else if (percentage >= 85) {
-        return new vscode.ThemeColor('testing.iconFailed');
+        return "#FF4D4D";
     } else if (percentage >= 80) {
-        return new vscode.ThemeColor('notebookStatusErrorIcon.foreground');
+        return "#FF6600";
     } else if (percentage >= 75) {
-        return new vscode.ThemeColor('charts.yellow');
+        return "#FF8800";
     } else if (percentage >= 70) {
-        return new vscode.ThemeColor('notificationsWarningIcon.foreground');
+        return "#FFAA00";
     } else if (percentage >= 65) {
-        return new vscode.ThemeColor('charts.orange');
+        return "#FFCC00";
     } else if (percentage >= 60) {
-        return new vscode.ThemeColor('charts.blue');
+        return "#FFE066";
     } else if (percentage >= 50) {
-        return new vscode.ThemeColor('charts.green');
+        return "#DCE775";
     } else if (percentage >= 40) {
-        return new vscode.ThemeColor('testing.iconPassed');
+        return "#66BB6A";
     } else if (percentage >= 30) {
-        return new vscode.ThemeColor('terminal.ansiGreen');
+        return "#81C784";
     } else if (percentage >= 20) {
-        return new vscode.ThemeColor('symbolIcon.classForeground');
+        return "#B3E6B3";
     } else if (percentage >= 10) {
-        return new vscode.ThemeColor('debugIcon.startForeground');
+        return "#E8F5E9";
     } else {
-        return new vscode.ThemeColor('foreground');
+        // If percentage is below all custom/default thresholds, use the default color
+        return "#FFFFFF"; 
     }
 }
 
