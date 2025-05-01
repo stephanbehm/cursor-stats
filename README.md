@@ -113,7 +113,7 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 3. Press `Ctrl+Shift+P` / `⌘⇧P`
 4. Run `Install from VSIX`
 5. Select the downloaded file
-6. 
+
 </details>
 
 ## 🤝 Contributing
