@@ -48,7 +48,7 @@
 <summary style="cursor: pointer"><h2 style="display: inline">📸 Screenshots</h2></summary>
 <table align="center">
 <tr>
-<td width="50%" "><img src="https://github.com/user-attachments/assets/e38f8b63-1c05-4450-910d-f69eb5e51edc" width="100%"/></td>
+<td width="50%" "><img src="https://github.com/user-attachments/assets/08b36e46-c8eb-4c39-8500-fc0caeb5399e" width="100%"/></td>
 <td width="50%" "><img src="https://github.com/user-attachments/assets/27f344d2-a3f7-4c13-98f2-20fdbb315430" width="100%"/></td>
 </tr>
 <tr>
