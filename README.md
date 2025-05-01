@@ -6,14 +6,14 @@
 >
 > including fast requests and usage-based pricing information.
 
-#### [Features](#section-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#-installation) • [Support](#-support)
+#### [Features](#section-features) • [Screenshots](#section-screenshots) • [Configuration](#section-configuration) • [Commands](#section-commands) • [Installation](#section-install) • [Support](#-support)
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Dwtexe.cursor-stats.svg?style=flat-square&label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Rating](https://img.shields.io/visual-studio-marketplace/r/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
 
 </div>
 
-<details>
+<details id="section-features">
 <summary style="cursor: pointer"><h2 style="display: inline">✨ Features</h2></summary>
 
 #### Core Features
@@ -97,12 +97,9 @@
 
 </details>
 
-## 🚀 Installation
-
-<table align="center">
-<tr>
-<td width="50%" valign="top">
-
+<details id="section-install">
+<summary style="cursor: pointer"><h2 style="display: inline">🚀 Installation</h2></summary>
+  
 #### VS Code Marketplace
 1. Open VS Code
 2. Press `Ctrl+P` / `⌘P`
@@ -110,21 +107,14 @@
 
 Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
-</td>
-<td width="50%" valign="top">
-
 #### Manual Installation
 1. Download the latest `.vsix` from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
 2. Open Cursor
 3. Press `Ctrl+Shift+P` / `⌘⇧P`
 4. Run `Install from VSIX`
 5. Select the downloaded file
-<br>
-
-</td>
-</tr>
-</table>
-
+6. 
+</details>
 
 ## 🤝 Contributing
 
