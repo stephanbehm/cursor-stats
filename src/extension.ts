@@ -47,6 +47,25 @@ export async function activate(context: vscode.ExtensionContext) {
         log('[Initialization] Extension activation started');
         extensionContext = context;
 
+        // Get package.json for current version
+        const packageJson = require('../package.json');
+        const currentVersion = packageJson.version;
+        
+        // Check if we need to show changelog after update
+        const lastInstalledVersion = context.globalState.get('lastInstalledVersion');
+        log(`[Initialization] Current version: ${currentVersion}, Last installed: ${lastInstalledVersion || 'not set'}`);
+        
+        if (lastInstalledVersion && lastInstalledVersion !== currentVersion) {
+            // Show changelog for the current version (we've updated)
+            log(`[Update] Extension updated from ${lastInstalledVersion} to ${currentVersion}, showing changelog`);
+            setTimeout(() => {
+                checkForUpdates(0, 0, currentVersion);
+            }, 3000); // Slight delay to let extension finish activating
+        }
+        
+        // Update the stored version
+        context.globalState.update('lastInstalledVersion', currentVersion);
+
         // Reset notifications on activation
         resetNotifications();
 
