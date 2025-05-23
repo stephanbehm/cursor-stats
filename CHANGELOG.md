@@ -19,6 +19,24 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.1.2] - 2025-05-23
+
+### Added
+- ✨ Enhanced spending alert notifications to trigger for each multiple of the configured threshold, providing more granular warnings.
+- 📊 Added "Daily Remaining" feature: Shows estimated fast requests remaining per day in the tooltip.
+  - Includes new settings: `cursorStats.showDailyRemaining` and `cursorStats.excludeWeekends`.
+- 🚀 Changelog Display on Update: The extension now automatically shows the changelog in a webview panel when it's updated to a new version.
+
+### Changed
+- 🔧 Switched from `sql.js` to `node-sqlite3-wasm` for SQLite database handling. This change addresses potential issues with large database files (over 2GB) and improves cross-platform compatibility by using a more robust WASM-based SQLite implementation.
+- 💅 Improved tooltip formatting for usage-based pricing details, including better alignment and padding for costs and model names.
+- 🛠 Refined detection and notification logic for unknown AI models in usage data.
+- ⚙️ Spending alert notifications are now reset and re-evaluated if the `spendingAlertThreshold` setting is changed.
+
+### Fixed
+- 🐛 Corrected an issue where mid-month payment amounts in tooltips might not always reflect the user's selected currency.
+- 🐞 Addressed potential minor inaccuracies in progress bar calculations when "exclude weekends" was enabled.
+
 ## [1.1.1] - 2025-05-01
 
 ### Added
