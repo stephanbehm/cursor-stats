@@ -80,6 +80,8 @@
 | `cursorStats.showProgressBars` | Enable progress visualization | `false` |
 | `cursorStats.progressBarLength` | Progress bar length (for progress visualization) | `10` |
 | `cursorStats.customDatabasePath` | Custom path to Cursor database | `""` |
+| `cursorStats.excludeWeekends` | Exclude weekends from period progress and daily calculations | `false` |
+| `cursorStats.showDailyRemaining` | Show estimated fast requests remaining per day | `false` |
 
 </details>
 
