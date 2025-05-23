@@ -197,7 +197,7 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                         requestCount = parseInt(originalMatch[1]);
                         const extractedDescription = originalMatch[2].trim();
 
-                        const genericModelPattern = /\b(claude-(?:3-(?:opus|sonnet|haiku)|3\.[57]-sonnet(?:-[\w-]+)?(?:-max)?)|gpt-(?:4(?:\.[15]|o-128k|-preview)?|3\.5-turbo)|gemini-(?:1\.5-flash-500k|2\.5-pro-(?:exp-\d{2}-\d{2}|preview-\d{2}-\d{2}|exp-max))|o[134](?:-mini)?)\b/i;
+                        const genericModelPattern = /\b(claude-(?:3-(?:opus|sonnet|haiku)|3\.[57]-sonnet(?:-[\w-]+)?(?:-max)?|4-sonnet-thinking)|gpt-(?:4(?:\.\d+|o-128k|-preview)?|3\.5-turbo)|gemini-(?:1\.5-flash-500k|2\.5-pro-(?:exp-\d{2}-\d{2}|preview-\d{2}-\d{2}|exp-max))|o[134](?:-mini)?)\b/i;
                         const specificModelMatch = item.description.match(genericModelPattern);
 
                         if (item.description.includes("tool calls")) {
@@ -253,7 +253,8 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                     calculation: calculationString,
                     totalDollars: `$${totalDollars.toFixed(2)}`,
                     description: item.description,
-                    modelNameForTooltip: parsedModelName // Store the determined model name here
+                    modelNameForTooltip: parsedModelName, // Store the determined model name here
+                    isDiscounted: item.description.toLowerCase().includes("discounted") // Add a flag for discounted items
                 });
             }
         }

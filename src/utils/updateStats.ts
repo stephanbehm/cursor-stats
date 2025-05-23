@@ -237,42 +237,64 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 if (item.description) {
                     // Logic for populating detectedUnknownModels for the notification
                     // This now uses modelNameForTooltip as a primary signal from api.ts
-                    if (item.modelNameForTooltip === "unknown-model") {
+                    if (item.modelNameForTooltip === "unknown-model" && item.description) {
                         // api.ts couldn't determine a specific model.
                         // Let's inspect the raw description for a hint for the notification.
-                        let nameFromDesc = "";
-                        const tokenBasedDescMatch = item.description.match(/^(\d+) token-based usage calls to ([\w.-]+),/i);
-                        const originalDescMatch = item.description.match(/^(\d+)\s+([^\s]+)/i); // Get first word after number
+                        let extractedTermForNotification = "";
 
+                        // Try to extract model name from specific patterns first
+                        const tokenBasedDescMatch = item.description.match(/^(\d+) token-based usage calls to ([\w.-]+),/i);
                         if (tokenBasedDescMatch && tokenBasedDescMatch[2]) {
-                            nameFromDesc = tokenBasedDescMatch[2];
-                        } else if (originalDescMatch && originalDescMatch[2]) {
-                            nameFromDesc = originalDescMatch[2];
+                            extractedTermForNotification = tokenBasedDescMatch[2].trim();
+                        } else {
+                            const extraFastMatch = item.description.match(/extra fast premium requests? \(([^)]+)\)/i);
+                            if (extraFastMatch && extraFastMatch[1]) {
+                                extractedTermForNotification = extraFastMatch[1].trim();
+                            } else {
+                                // General case: "N ACTUAL_MODEL_NAME_OR_PHRASE requests/calls"
+                                const fullDescMatch = item.description.match(/^(\d+)\s+(.+?)(?: request| calls)?(?: beyond|\*| per|$)/i);
+                                if (fullDescMatch && fullDescMatch[2]) {
+                                    extractedTermForNotification = fullDescMatch[2].trim();
+                                    // If it's discounted and starts with "discounted ", remove prefix
+                                    if (item.isDiscounted && extractedTermForNotification.toLowerCase().startsWith("discounted ")) {
+                                        extractedTermForNotification = extractedTermForNotification.substring(11).trim();
+                                    }
+                                } else {
+                                    // Fallback: first word after number if other patterns fail (less likely to be useful)
+                                    const simpleDescMatch = item.description.match(/^(\d+)\s+([\w.-]+)/i); // Changed to [\w.-]+
+                                    if (simpleDescMatch && simpleDescMatch[2]) {
+                                        extractedTermForNotification = simpleDescMatch[2].trim();
+                                    }
+                                }
+                            }
                         }
                         
-                        nameFromDesc = nameFromDesc.replace(/requests?|calls?|beyond|\*|per|,$/gi, '').trim();
+                        // General cleanup of suffixes
+                        extractedTermForNotification = extractedTermForNotification.replace(/requests?|calls?|beyond|\*|per|,$/gi, '').trim();
+                        if (extractedTermForNotification.toLowerCase().endsWith(" usage")) {
+                            extractedTermForNotification = extractedTermForNotification.substring(0, extractedTermForNotification.length - 6).trim();
+                        }
+                        // Ensure it's not an empty string after cleanup
+                        if (extractedTermForNotification && 
+                            extractedTermForNotification.length > 1 && // Meaningful length
+                            extractedTermForNotification.toLowerCase() !== "token-based" &&
+                            extractedTermForNotification.toLowerCase() !== "discounted") {
 
-                        if (nameFromDesc && nameFromDesc.length > 1 && nameFromDesc.toLowerCase() !== "token-based") {
-                            const commonKeywords = [
-                                'claude', 'gpt', 'gemini', 'o1', 'o3', 'o4', 
-                                'tool', 'fast', 'sonnet', 'opus', 'haiku',
-                                'mini', 'max', 'preview', 'exp', 'pro',
-                                'premium', 'extra', 
+                            const veryGenericKeywords = [
                                 'usage', 'calls', 'request', 'requests', 'cents', 'beyond', 'month', 'day',
-                                'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
+                                'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+                                'premium', 'extra', 'tool', 'fast', 'thinking'
+                                // Model families like 'claude', 'gpt', 'gemini', 'o1' etc. are NOT here, 
+                                // as "claude-x" should be flagged if "claude-x" is new.
                             ];
                             
-                            const isLikelyJustKeyword = commonKeywords.some(keyword =>
-                                nameFromDesc.toLowerCase().includes(keyword) || 
-                                (item.description && item.description.toLowerCase().includes(keyword + " request")) || 
-                                (item.description && item.description.toLowerCase().includes(keyword + " call"))
-                            );
+                            const isVeryGeneric = veryGenericKeywords.includes(extractedTermForNotification.toLowerCase());
 
-                            if (!isLikelyJustKeyword) {
-                                const alreadyPresent = Array.from(detectedUnknownModels).some(d => d.toLowerCase().includes(nameFromDesc.toLowerCase()) || nameFromDesc.toLowerCase().includes(d.toLowerCase()));
+                            if (!isVeryGeneric) {
+                                const alreadyPresent = Array.from(detectedUnknownModels).some(d => d.toLowerCase().includes(extractedTermForNotification.toLowerCase()) || extractedTermForNotification.toLowerCase().includes(d.toLowerCase()));
                                 if (!alreadyPresent) {
-                                    detectedUnknownModels.add(nameFromDesc);
-                                    log(`[Stats] Adding to detectedUnknownModels (api.ts flagged as unknown-model, raw hint): '${nameFromDesc}' from "${item.description}"`);
+                                    detectedUnknownModels.add(extractedTermForNotification);
+                                    log(`[Stats] Adding to detectedUnknownModels (api.ts flagged as unknown-model, extracted term): '${extractedTermForNotification}' from "${item.description}"`);
                                 }
                             }
                         }
@@ -290,13 +312,28 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                     
                     let line = `   • ${item.calculation} ➜ &nbsp;&nbsp;**${formattedItemCost}**`;
                     const modelName = item.modelNameForTooltip;
+                    let modelNameDisplay = ""; // Initialize for the model name part of the string
 
-                    if (modelName && modelName !== "unknown-model") {
+                    if (modelName) { // Make sure modelName is there
+                        const isDiscounted = item.description && item.description.toLowerCase().includes("discounted");
+                        const isUnknown = modelName === "unknown-model";
+
+                        if (isDiscounted) {
+                            modelNameDisplay = `(discounted | ${isUnknown ? "unknown-model" : modelName})`;
+                        } else if (isUnknown) {
+                            modelNameDisplay = "(unknown-model)";
+                        } else {
+                            modelNameDisplay = `(${modelName})`;
+                        }
+                    }
+                    // If modelName was undefined or null, modelNameDisplay remains empty.
+
+                    if (modelNameDisplay) { // Only add spacing and display string if it's not empty
                         const desiredTotalWidth = 70; // Adjust as needed for good visual alignment
-                        const currentLineWidth = line.replace(/\*\*/g, '').length; // Approx length without markdown
-                        const modelNameLength = `(${modelName})`.length;
-                        const spacesNeeded = Math.max(1, desiredTotalWidth - currentLineWidth - modelNameLength);
-                        line += ' '.repeat(spacesNeeded) + `&nbsp;&nbsp;&nbsp;&nbsp;(${modelName})`;
+                        const currentLineWidth = line.replace(/\*\*/g, '').replace(/&nbsp;/g, ' ').length; // Approx length without markdown & html spaces
+                        const modelNameDisplayLength = modelNameDisplay.replace(/&nbsp;/g, ' ').length;
+                        const spacesNeeded = Math.max(1, desiredTotalWidth - currentLineWidth - modelNameDisplayLength);
+                        line += ' '.repeat(spacesNeeded) + `&nbsp;&nbsp;&nbsp;&nbsp;${modelNameDisplay}`;
                     }
                     contentLines.push(formatTooltipLine(line));
 

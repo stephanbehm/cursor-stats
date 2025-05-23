@@ -11,3 +11,4 @@ builds/
 user-cache.json
 currency-rates.json
 .cursorignore
+package-lock.json

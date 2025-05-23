@@ -3,6 +3,7 @@ export interface UsageItem {
     totalDollars: string;
     description?: string;
     modelNameForTooltip?: string;
+    isDiscounted?: boolean;
 }
 
 export interface UsageInfo {
