@@ -8,6 +8,7 @@ const notifiedPremiumThresholds = new Set<number>();
 const notifiedUsageBasedThresholds = new Set<number>();
 const notifiedSpendingThresholds = new Set<number>();
 let isNotificationInProgress = false;
+let unpaidInvoiceNotifiedThisSession = false;
 
 // Reset notification tracking
 export function resetNotifications() {
@@ -15,6 +16,7 @@ export function resetNotifications() {
     notifiedUsageBasedThresholds.clear();
     notifiedSpendingThresholds.clear();
     isNotificationInProgress = false;
+    unpaidInvoiceNotifiedThisSession = false;
     log('[Notifications] Reset notification tracking');
 }
 
@@ -64,6 +66,39 @@ export async function checkAndNotifySpending(totalSpent: number) {
             // Mark this threshold as notified
             notifiedSpendingThresholds.add(currentThresholdMultiple + 1);
         }
+    } finally {
+        isNotificationInProgress = false;
+    }
+}
+
+export async function checkAndNotifyUnpaidInvoice(token: string) {
+    if (unpaidInvoiceNotifiedThisSession || isNotificationInProgress) {
+        return;
+    }
+
+    try {
+        isNotificationInProgress = true;
+        log('[Notifications] Checking for unpaid mid-month invoice notification.');
+
+        const notification = await vscode.window.showWarningMessage(
+            '⚠️ You have an unpaid mid-month invoice. Please pay it to continue using usage-based pricing.',
+            'Open Billing Page',
+            'Dismiss'
+        );
+
+        if (notification === 'Open Billing Page') {
+            try {
+                const { getStripeSessionUrl } = await import('../services/api'); // Lazy import
+                const stripeUrl = await getStripeSessionUrl(token);
+                vscode.env.openExternal(vscode.Uri.parse(stripeUrl));
+            } catch (error) {
+                log('[Notifications] Failed to get Stripe URL, falling back to settings page.', true);
+                vscode.env.openExternal(vscode.Uri.parse('https://www.cursor.com/settings'));
+            }
+        }
+        unpaidInvoiceNotifiedThisSession = true;
+        log('[Notifications] Unpaid invoice notification shown.');
+
     } finally {
         isNotificationInProgress = false;
     }

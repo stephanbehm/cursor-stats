@@ -71,7 +71,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
 
     // Header section with centered title
     tooltip.appendMarkdown('<div align="center">\n\n');
-    tooltip.appendMarkdown('## ⚡ Cursor Usage\n\n');
+    tooltip.appendMarkdown('## ⚡ Cursor Usage Stats\n\n');
     tooltip.appendMarkdown('</div>\n\n');
 
     if (isError) {
@@ -268,11 +268,14 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
 
                     // Add mid-month payment message if it exists (using the found informational line)
                     if (informationalMidMonthLine) {
-                        const formattedUnpaidAmount = lines.find(line => line.includes('Unpaid:'))?.split('Unpaid:')[1].trim() || 
-                                                      await convertAndFormatCurrency(unpaidAmount);
+                        let extractedUnpaidAmountStr = lines.find(line => line.includes('Unpaid:'))?.split('Unpaid:')[1].trim();
+                        if (extractedUnpaidAmountStr && extractedUnpaidAmountStr.endsWith(')')) {
+                            extractedUnpaidAmountStr = extractedUnpaidAmountStr.slice(0, -1);
+                        }
+                        const formattedUnpaidAmount = extractedUnpaidAmountStr || await convertAndFormatCurrency(unpaidAmount);
                         
                         // Use the already formatted informational line, just add the unpaid part dynamically
-                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (Unpaid: ${formattedUnpaidAmount})\n\n`);
+                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (Unpaid: **${formattedUnpaidAmount}**)\n\n`);
                     }
                 } else {
                     tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');

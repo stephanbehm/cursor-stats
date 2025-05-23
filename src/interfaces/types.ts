@@ -2,6 +2,7 @@ export interface UsageItem {
     calculation: string;
     totalDollars: string;
     description?: string;
+    modelNameForTooltip?: string;
 }
 
 export interface UsageInfo {

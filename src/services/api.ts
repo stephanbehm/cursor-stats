@@ -3,6 +3,7 @@ import { CursorStats, UsageLimitResponse, ExtendedAxiosError, UsageItem, CursorU
 import { log } from '../utils/logger';
 import { checkTeamMembership, getTeamUsage, extractUserUsage } from './team';
 import { getExtensionContext } from '../extension';
+import * as fs from 'fs';
 
 export async function getCurrentUsageLimit(token: string): Promise<UsageLimitResponse> {
     try {
@@ -59,43 +60,94 @@ export async function checkUsageBasedStatus(token: string): Promise<{isEnabled: 
 async function fetchMonthData(token: string, month: number, year: number): Promise<{ items: UsageItem[], hasUnpaidMidMonthInvoice: boolean, midMonthPayment: number }> {
     log(`[API] Fetching data for ${month}/${year}`);
     try {
-        const response = await axios.post('https://www.cursor.com/api/dashboard/get-monthly-invoice', {
-            month,
-            year,
-            includeUsageEvents: false
-        }, {
-            headers: {
-                Cookie: `WorkosCursorSessionToken=${token}`
+        // Path to local dev data file, leave empty for production
+        const devDataPath: string = "";
+
+        let response;
+        if (devDataPath) {
+            try {
+                log(`[API] Dev mode enabled, reading from: ${devDataPath}`);
+                const rawData = fs.readFileSync(devDataPath, 'utf8');
+                response = { data: JSON.parse(rawData) };
+                log('[API] Successfully loaded dev data');
+            } catch (devError: any) {
+                log('[API] Error reading dev data: ' + devError.message, true);
+                throw devError;
             }
-        });
+        } else {
+            response = await axios.post('https://www.cursor.com/api/dashboard/get-monthly-invoice', {
+                month,
+                year,
+                includeUsageEvents: false
+            }, {
+                headers: {
+                    Cookie: `WorkosCursorSessionToken=${token}`
+                }
+            });
+        }
         
         const usageItems: UsageItem[] = [];
         let midMonthPayment = 0;
         if (response.data.items) {
-            // First pass: find the maximum request count among valid items
+            // First pass: find the maximum request count and cost per request among valid items
             let maxRequestCount = 0;
+            let maxCostPerRequest = 0;
             for (const item of response.data.items) {
-                // Skip items without cents value
-                if (!item.hasOwnProperty('cents')) {
-                    log('[API] Skipping item without cents value: ' + item.description);
+                // Skip items without cents value or mid-month payments
+                if (!item.hasOwnProperty('cents') || typeof item.cents === 'undefined' || item.description.includes('Mid-month usage paid')) {
                     continue;
                 }
                 
-                // Skip mid-month payment items
-                if (item.description.includes('Mid-month usage paid')) {
-                    continue;
+                let currentItemRequestCount = 0;
+                const tokenBasedMatch = item.description.match(/^(\d+) token-based usage calls to/);
+                if (tokenBasedMatch && tokenBasedMatch[1]) {
+                    currentItemRequestCount = parseInt(tokenBasedMatch[1]);
+                } else {
+                    const originalMatch = item.description.match(/^(\d+)/); // Match digits at the beginning
+                    if (originalMatch && originalMatch[1]) {
+                        currentItemRequestCount = parseInt(originalMatch[1]);
+                    }
                 }
-                
-                // Extract the request count - match the first number in the description
-                const match = item.description.match(/^(\d+)/);
-                if (match && match[1]) {
-                    const requestCount = parseInt(match[1]);
-                    maxRequestCount = Math.max(maxRequestCount, requestCount);
+
+                if (currentItemRequestCount > 0) {
+                    maxRequestCount = Math.max(maxRequestCount, currentItemRequestCount);
+                    
+                    // Calculate cost per request for this item to find maximum
+                    const costPerRequestCents = item.cents / currentItemRequestCount;
+                    const costPerRequestDollars = costPerRequestCents / 100;
+                    maxCostPerRequest = Math.max(maxCostPerRequest, costPerRequestDollars);
                 }
             }
             
             // Calculate the padding width based on the maximum request count
-            const paddingWidth = maxRequestCount.toString().length;
+            const paddingWidth = maxRequestCount > 0 ? maxRequestCount.toString().length : 1; // Ensure paddingWidth is at least 1
+            
+            // Calculate the padding width for cost per request (format to 3 decimal places and find max width)
+            // Max cost will be something like "XX.XXX" or "X.XXX", so we need to find the max length of that string.
+            // Let's find the maximum cost in cents first to determine the number of integer digits.
+            let maxCostCentsForPadding = 0;
+            for (const item of response.data.items) {
+                if (!item.hasOwnProperty('cents') || typeof item.cents === 'undefined' || item.description.includes('Mid-month usage paid')) {
+                    continue;
+                }
+                let currentItemRequestCount = 0;
+                const tokenBasedMatch = item.description.match(/^(\d+) token-based usage calls to/);
+                if (tokenBasedMatch && tokenBasedMatch[1]) {
+                    currentItemRequestCount = parseInt(tokenBasedMatch[1]);
+                } else {
+                    const originalMatch = item.description.match(/^(\d+)/);
+                    if (originalMatch && originalMatch[1]) {
+                        currentItemRequestCount = parseInt(originalMatch[1]);
+                    }
+                }
+                if (currentItemRequestCount > 0) {
+                    const costPerRequestCents = item.cents / currentItemRequestCount;
+                    maxCostCentsForPadding = Math.max(maxCostCentsForPadding, costPerRequestCents);
+                }
+            }
+            // Now format this max cost per request to get its string length
+            const maxCostPerRequestForPaddingFormatted = (maxCostCentsForPadding / 100).toFixed(3);
+            const costPaddingWidth = maxCostPerRequestForPaddingFormatted.length;
 
             for (const item of response.data.items) {
                 
@@ -123,15 +175,60 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                     continue; // Skip adding this to regular usage items
                 }
 
-                // Extract the request count - match the first number in the description
-                const match = item.description.match(/^(\d+)/);
-                if (!match || !match[1]) {
-                    log('[API] Could not extract request count from: ' + item.description);
+                // Logic to parse different item description formats
+                const cents = item.cents;
+
+                if (typeof cents === 'undefined') {
+                    log('[API] Skipping item with undefined cents value: ' + item.description);
                     continue;
                 }
-                
-                const requestCount = parseInt(match[1]);
-                const cents = item.cents;
+
+                let requestCount: number;
+                let parsedModelName: string; // Renamed from modelInfo for clarity
+                let isToolCall = false;
+
+                const tokenBasedMatch = item.description.match(/^(\d+) token-based usage calls to ([\w.-]+), totalling: \$(?:[\d.]+)/);
+                if (tokenBasedMatch) {
+                    requestCount = parseInt(tokenBasedMatch[1]);
+                    parsedModelName = tokenBasedMatch[2];
+                } else {
+                    const originalMatch = item.description.match(/^(\d+)\s+(.+?)(?: request| calls)?(?: beyond|\*| per|$)/i);
+                    if (originalMatch) {
+                        requestCount = parseInt(originalMatch[1]);
+                        const extractedDescription = originalMatch[2].trim();
+
+                        const genericModelPattern = /\b(claude-(?:3-(?:opus|sonnet|haiku)|3\.[57]-sonnet(?:-[\w-]+)?(?:-max)?)|gpt-(?:4(?:\.[15]|o-128k|-preview)?|3\.5-turbo)|gemini-(?:1\.5-flash-500k|2\.5-pro-(?:exp-\d{2}-\d{2}|preview-\d{2}-\d{2}|exp-max))|o[134](?:-mini)?)\b/i;
+                        const specificModelMatch = item.description.match(genericModelPattern);
+
+                        if (item.description.includes("tool calls")) {
+                            parsedModelName = "tool calls";
+                            isToolCall = true;
+                        } else if (specificModelMatch) {
+                            parsedModelName = specificModelMatch[1];
+                        } else if (item.description.includes("extra fast premium request")) {
+                            const extraFastModelMatch = item.description.match(/extra fast premium requests? \(([^)]+)\)/i);
+                            if (extraFastModelMatch && extraFastModelMatch[1]) {
+                                parsedModelName = extraFastModelMatch[1]; // e.g., Haiku
+                            } else {
+                                parsedModelName = "fast premium";
+                            }
+                        } else {
+                            // Fallback for unknown model structure
+                            parsedModelName = "unknown-model"; // Default to unknown-model
+                            log(`[API] Could not determine specific model for (original format): "${item.description}". Using "${parsedModelName}".`);
+                        }
+                    } else {
+                        log('[API] Could not extract request count or model info from: ' + item.description);
+                        parsedModelName = "unknown-model"; // Ensure it's set for items we can't parse fully
+                        // Try to get at least a request count if possible, even if model is unknown
+                        const fallbackCountMatch = item.description.match(/^(\d+)/);
+                        if (fallbackCountMatch) {
+                            requestCount = parseInt(fallbackCountMatch[1]);
+                        } else {
+                            continue; // Truly unparsable
+                        }
+                    }
+                }
                 
                 // Skip items with 0 requests to avoid division by zero
                 if (requestCount === 0) {
@@ -139,39 +236,31 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                     continue;
                 }
                 
-                // Skip if cents is undefined
-                if (typeof item.cents === 'undefined') {
-                    log('[API] Skipping item with undefined cents value: ' + item.description);
-                    continue;
-                }
-                
-                const costPerRequest = item.cents / requestCount;
-                const dollars = item.cents / 100;
+                const costPerRequestCents = cents / requestCount;
+                const totalDollars = cents / 100;
 
-                // Pad request count based on the maximum width
                 const paddedRequestCount = requestCount.toString().padStart(paddingWidth, '0');
-                // Format cost per request in dollars
-                const costPerRequestDollars = (costPerRequest / 100).toFixed(2);
-
-                // Get a user-friendly description based on the item type
-                let itemType = "requests";
-                if (item.description.includes("tool calls")) {
-                    itemType = "tool calls";
-                } else if (item.description.match(/claude|gpt|gemini|o1|o3-mini/i)) {
-                    itemType = "AI requests";
-                }
+                const costPerRequestDollarsFormatted = (costPerRequestCents / 100).toFixed(3).padStart(costPaddingWidth, '0');
+                
+                const isTotallingItem = !!tokenBasedMatch; 
+                const tilde = isTotallingItem ? "~" : "&nbsp;&nbsp;";
+                const itemUnit = "req"; // Always use "req" as the unit
+                
+                // Simplified calculation string, model name is now separate
+                const calculationString = `**${paddedRequestCount}** ${itemUnit} @ **$${costPerRequestDollarsFormatted}${tilde}**`;
 
                 usageItems.push({
-                    calculation: `${paddedRequestCount}*$${costPerRequestDollars}`,
-                    totalDollars: `$${dollars.toFixed(2)}`,
-                    description: item.description // Add the original description for reference
+                    calculation: calculationString,
+                    totalDollars: `$${totalDollars.toFixed(2)}`,
+                    description: item.description,
+                    modelNameForTooltip: parsedModelName // Store the determined model name here
                 });
             }
         }
         
         return {
             items: usageItems,
-            hasUnpaidMidMonthInvoice: false,
+            hasUnpaidMidMonthInvoice: response.data.hasUnpaidMidMonthInvoice,
             midMonthPayment
         };
     } catch (error: any) {

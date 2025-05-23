@@ -1,7 +1,7 @@
 import { log } from './logger';
 import { getCursorTokenFromDB } from '../services/database';
 import { checkUsageBasedStatus, fetchCursorStats, getStripeSessionUrl } from '../services/api';
-import { checkAndNotifyUsage, checkAndNotifySpending } from '../handlers/notifications';
+import { checkAndNotifyUsage, checkAndNotifySpending, checkAndNotifyUnpaidInvoice } from '../handlers/notifications';
 import { 
     startRefreshInterval, 
     startCountdownDisplay, 
@@ -213,6 +213,20 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 );
             }
             
+            // Determine the maximum length for formatted item costs for padding
+            let maxFormattedItemCostLength = 0;
+            for (const item of items) {
+                if (item.description?.includes('Mid-month usage paid')) {
+                    continue;
+                }
+                const itemCost = parseFloat(item.totalDollars.replace('$', ''));
+                // We format with 2 decimal places for display
+                const tempFormattedCost = itemCost.toFixed(2); // Format to string with 2 decimals
+                if (tempFormattedCost.length > maxFormattedItemCostLength) {
+                    maxFormattedItemCostLength = tempFormattedCost.length;
+                }
+            }
+
             for (const item of items) {
                 // Skip mid-month payment line item from the detailed list
                 if (item.description?.includes('Mid-month usage paid')) {
@@ -221,115 +235,85 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
 
                 // If the item has a description, use it to provide better context
                 if (item.description) {
-                    // Extract the item type from description for better display
-                    let displayType = "";
-                    let isKnownModel = true;
-                    
-                    if (item.description.includes("tool calls")) {
-                        displayType = "Tool Calls";
-                    } else if (item.description.match(/o3-mini/i)) {
-                        displayType = "o3-mini";
-                    } else if (item.description.match(/o1\s+requests/i)) {
-                        displayType = "o1";
-                    } else if (item.description.match(/claude-3\.7-sonnet-thinking-max/i)) {
-                        displayType = "claude-3.7-sonnet-thinking-max";
-                    } else if (item.description.match(/claude-3\.7-sonnet-max/i)) {
-                        displayType = "claude-3.7-sonnet-max";
-                    } else if (item.description.match(/extra fast premium/i)) {
-                        displayType = "Fast Requests";
-                    } else if (item.description.match(/gpt-4\.5-preview/i)) {
-                        displayType = "gpt-4.5-preview";
-                    } else if (item.description.match(/gemini-2-5-pro-exp-max/i)) {
-                        displayType = "gemini-2-5-pro-exp-max";
-                    } else if (item.description.match(/^\d+\s+o3\s+request/i)) {
-                        displayType = "o3";
-                    } else {
-                        // Try to extract a potential model name using a broader pattern
-                        // Matches "NUMBER MODEL_NAME requests *"
-                        const modelMatch = item.description.match(/^\d+\s+([a-zA-Z0-9\-\.]+)\s+requests?\b/i);
-                        if (modelMatch && modelMatch[1]) {
-                            const potentialModelName = modelMatch[1];
-                            // Check if it's not one we already handle explicitly (avoids double counting)
-                            const knownModels = ['o3-mini', 'o1', 'claude-3.7-sonnet-thinking-max', 'claude-3.7-sonnet-max', 'gpt-4.5-preview', 'gemini-2-5-pro-exp-max'];
-                            if (!knownModels.some(known => potentialModelName.toLowerCase().includes(known.toLowerCase()))) {
-                                displayType = potentialModelName; // Display the extracted name
-                                isKnownModel = false;
-                                // Add the extracted model name to our set
-                                detectedUnknownModels.add(potentialModelName);
-                                log(`[Stats] Detected potentially unknown model: ${potentialModelName} in description: "${item.description}"`, true);
-                            } else {
-                                // It matched a known model structure but wasn't caught by specific checks? Log for debugging.
-                                log(`[Debug] Model matched generic pattern but might be known: ${potentialModelName}`);
-                                displayType = potentialModelName; // Still display it
-                            }
-                        } else {
-                            displayType = "Requests"; // Fallback display type
+                    // Logic for populating detectedUnknownModels for the notification
+                    // This now uses modelNameForTooltip as a primary signal from api.ts
+                    if (item.modelNameForTooltip === "unknown-model") {
+                        // api.ts couldn't determine a specific model.
+                        // Let's inspect the raw description for a hint for the notification.
+                        let nameFromDesc = "";
+                        const tokenBasedDescMatch = item.description.match(/^(\d+) token-based usage calls to ([\w.-]+),/i);
+                        const originalDescMatch = item.description.match(/^(\d+)\s+([^\s]+)/i); // Get first word after number
 
-                            // If it contains 'requests' and isn't 'Mid-month', flag it as potentially unknown for notification
-                            if (item.description.match(/requests/i) && !item.description.includes("Mid-month")) {
-                                isKnownModel = false;
-                                // Add the whole description as a fallback identifier if extraction failed
-                                detectedUnknownModels.add(`Unknown format: ${item.description}`);
-                                log(`[Stats] Potentially unknown model format (extraction failed): "${item.description}"`, true);
+                        if (tokenBasedDescMatch && tokenBasedDescMatch[2]) {
+                            nameFromDesc = tokenBasedDescMatch[2];
+                        } else if (originalDescMatch && originalDescMatch[2]) {
+                            nameFromDesc = originalDescMatch[2];
+                        }
+                        
+                        nameFromDesc = nameFromDesc.replace(/requests?|calls?|beyond|\*|per|,$/gi, '').trim();
+
+                        if (nameFromDesc && nameFromDesc.length > 1 && nameFromDesc.toLowerCase() !== "token-based") {
+                            const commonKeywords = [
+                                'claude', 'gpt', 'gemini', 'o1', 'o3', 'o4', 
+                                'tool', 'fast', 'sonnet', 'opus', 'haiku',
+                                'mini', 'max', 'preview', 'exp', 'pro',
+                                'premium', 'extra', 
+                                'usage', 'calls', 'request', 'requests', 'cents', 'beyond', 'month', 'day',
+                                'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
+                            ];
+                            
+                            const isLikelyJustKeyword = commonKeywords.some(keyword =>
+                                nameFromDesc.toLowerCase().includes(keyword) || 
+                                (item.description && item.description.toLowerCase().includes(keyword + " request")) || 
+                                (item.description && item.description.toLowerCase().includes(keyword + " call"))
+                            );
+
+                            if (!isLikelyJustKeyword) {
+                                const alreadyPresent = Array.from(detectedUnknownModels).some(d => d.toLowerCase().includes(nameFromDesc.toLowerCase()) || nameFromDesc.toLowerCase().includes(d.toLowerCase()));
+                                if (!alreadyPresent) {
+                                    detectedUnknownModels.add(nameFromDesc);
+                                    log(`[Stats] Adding to detectedUnknownModels (api.ts flagged as unknown-model, raw hint): '${nameFromDesc}' from "${item.description}"`);
+                                }
                             }
                         }
                     }
                     
-                    // Show notification if an unknown model was found and we haven't shown it yet
-                    if (!isKnownModel && !unknownModelNotificationShown && detectedUnknownModels.size > 0) {
-                        unknownModelNotificationShown = true;
-                        
-                        const unknownModels = Array.from(detectedUnknownModels).join(", ");
-                        log(`[Stats] Showing notification for unknown models: ${unknownModels}`);
-                        
-                        vscode.window.showInformationMessage(
-                            `New Cursor model detected on api response: "${unknownModels}". Please create a report and submit it on GitHub so we can add support for this model.`,
-                            'Create Report',
-                            'Open GitHub Issues'
-                        ).then(selection => {
-                            if (selection === 'Create Report') {
-                                vscode.commands.executeCommand('cursor-stats.createReport');
-                            } else if (selection === 'Open GitHub Issues') {
-                                vscode.env.openExternal(vscode.Uri.parse('https://github.com/Dwtexe/cursor-stats/issues/new'));
-                            }
-                        });
-                    }
-                    
                     // Convert item cost for display
                     const itemCost = parseFloat(item.totalDollars.replace('$', ''));
-                    const formattedItemCost = await convertAndFormatCurrency(itemCost);
-                    const calculation = item.calculation.split('*')[0].trim();
-                    const rate = item.calculation.split('*')[1]?.trim() || '';
+                    let formattedItemCost = await convertAndFormatCurrency(itemCost);
+
+                    // Pad the numerical part of the formattedItemCost
+                    const currencySymbol = formattedItemCost.match(/^[^0-9-.\\,]*/)?.[0] || "";
+                    const numericalPart = formattedItemCost.substring(currencySymbol.length);
+                    const paddedNumericalPart = numericalPart.padStart(maxFormattedItemCostLength, '0');
+                    formattedItemCost = currencySymbol + paddedNumericalPart;
                     
-                    // If rate exists, convert its currency too
-                    let formattedCalculation = calculation;
-                    if (rate) {
-                        const rateValue = parseFloat(rate.replace('$', ''));
-                        const formattedRate = await convertAndFormatCurrency(rateValue);
-                        formattedCalculation = `${calculation}*${formattedRate}`;
-                    } else {
-                        formattedCalculation = item.calculation;
+                    let line = `   • ${item.calculation} ➜ &nbsp;&nbsp;**${formattedItemCost}**`;
+                    const modelName = item.modelNameForTooltip;
+
+                    if (modelName && modelName !== "unknown-model") {
+                        const desiredTotalWidth = 70; // Adjust as needed for good visual alignment
+                        const currentLineWidth = line.replace(/\*\*/g, '').length; // Approx length without markdown
+                        const modelNameLength = `(${modelName})`.length;
+                        const spacesNeeded = Math.max(1, desiredTotalWidth - currentLineWidth - modelNameLength);
+                        line += ' '.repeat(spacesNeeded) + `&nbsp;&nbsp;&nbsp;&nbsp;(${modelName})`;
                     }
-                    
-                    contentLines.push(formatTooltipLine(`   • ${formattedCalculation} (${displayType}) ➜ **${formattedItemCost}**`));
+                    contentLines.push(formatTooltipLine(line));
+
                 } else {
-                    // Convert item cost for display
+                    // Fallback for items without a description (should be rare but handle it)
                     const itemCost = parseFloat(item.totalDollars.replace('$', ''));
-                    const formattedItemCost = await convertAndFormatCurrency(itemCost);
-                    const calculation = item.calculation.split('*')[0].trim();
-                    const rate = item.calculation.split('*')[1]?.trim() || '';
+                    let formattedItemCost = await convertAndFormatCurrency(itemCost);
+
+                    // Pad the numerical part of the formattedItemCost
+                    const currencySymbol = formattedItemCost.match(/^[^0-9-.\\,]*/)?.[0] || "";
+                    const numericalPart = formattedItemCost.substring(currencySymbol.length);
+                    const paddedNumericalPart = numericalPart.padStart(maxFormattedItemCostLength, '0');
+                    formattedItemCost = currencySymbol + paddedNumericalPart;
                     
-                    // If rate exists, convert its currency too
-                    let formattedCalculation = calculation;
-                    if (rate) {
-                        const rateValue = parseFloat(rate.replace('$', ''));
-                        const formattedRate = await convertAndFormatCurrency(rateValue);
-                        formattedCalculation = `${calculation}*${formattedRate}`;
-                    } else {
-                        formattedCalculation = item.calculation;
-                    }
-                    
-                    contentLines.push(formatTooltipLine(`   • ${formattedCalculation} ➜ **${formattedItemCost}**`));
+                    // Use a generic calculation string if item.calculation is also missing, or the original if available
+                    const calculationString = item.calculation || "Unknown Item"; 
+                    contentLines.push(formatTooltipLine(`   • ${calculationString} ➜ &nbsp;&nbsp;**${formattedItemCost}**`));
                 }
             }
 
@@ -337,7 +321,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 const formattedMidMonthPayment = await convertAndFormatCurrency(stats.lastMonth.usageBasedPricing.midMonthPayment);
                 contentLines.push(
                     '',
-                    formatTooltipLine(`ℹ️ You have paid ${formattedMidMonthPayment} of this cost already`)
+                    formatTooltipLine(`ℹ️ You have paid **${formattedMidMonthPayment}** of this cost already`)
                 );
             }
 
@@ -406,18 +390,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 }
 
                 if (stats.lastMonth.usageBasedPricing.hasUnpaidMidMonthInvoice) {
-                    vscode.window.showWarningMessage('⚠️ You have an unpaid mid-month invoice. Please pay it to continue using usage-based pricing.', 'Open Billing Page')
-                        .then(async selection => {
-                            if (selection === 'Open Billing Page') {
-                                try {
-                                    const stripeUrl = await getStripeSessionUrl(token);
-                                    vscode.env.openExternal(vscode.Uri.parse(stripeUrl));
-                                } catch (error) {
-                                    // Fallback to settings page if stripe URL fails
-                                    vscode.env.openExternal(vscode.Uri.parse('https://www.cursor.com/settings'));
-                                }
-                            }
-                        });
+                    checkAndNotifyUnpaidInvoice(token);
                 }
             }, 1000);
         } else {
@@ -428,43 +401,28 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 });
             }, 1000);
         }
+
+        // The main notification for unknown models is now based on the populated detectedUnknownModels set
+        if (!unknownModelNotificationShown && detectedUnknownModels.size > 0) {
+            unknownModelNotificationShown = true; // Show once per session globally
+            const unknownModelsString = Array.from(detectedUnknownModels).join(", ");
+            log(`[Stats] Showing notification for aggregated unknown models: ${unknownModelsString}`);
+            
+            vscode.window.showInformationMessage(
+                `New or unhandled Cursor model terms detected: "${unknownModelsString}". If these seem like new models, please create a report and submit it on GitHub.`,
+                'Create Report',
+                'Open GitHub Issues'
+            ).then(selection => {
+                if (selection === 'Create Report') {
+                    vscode.commands.executeCommand('cursor-stats.createReport');
+                } else if (selection === 'Open GitHub Issues') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/Dwtexe/cursor-stats/issues/new'));
+                }
+            });
+        }
     } catch (error: any) {
         const errorCount = incrementConsecutiveErrorCount();
-        log(`[Critical] Error updating stats (Error count: ${errorCount}): ${error.message}`, true);
-
-        if (errorCount >= 2) {
-            // Always reset cooldown timer on errors after 2 consecutive failures
-            setCooldownStartTime(Date.now());
-            const refreshInterval = getRefreshInterval();
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-            startCountdownDisplay();
-            log('[Critical] Starting/Resetting cooldown period due to consecutive errors');
-        }
-
-        const cooldownStartTime = getCooldownStartTime();
-        statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorBackground');
-        
-        if (cooldownStartTime) {
-            const now = Date.now();
-            const elapsed = now - cooldownStartTime;
-            const remaining = COOLDOWN_DURATION_MS - elapsed;
-            statusBarItem.text = `$(warning) Cursor API Unavailable (Retrying in ${formatCountdown(remaining)})`;
-        } else {
-            statusBarItem.text = "$(error) Cursor Stats: Error";
-        }
-
-        const errorLines = [
-            '⚠️ Error fetching Cursor stats',
-            `❌ ${error.response?.status >= 500 ? 'Cursor API is temporarily unavailable' : 'Unable to retrieve usage statistics'}`,
-            cooldownStartTime ? '\nAuto-refresh paused due to consecutive errors' : '',
-            '',
-            `🕒 Last attempt: ${new Date().toLocaleString()}`
-        ].filter(line => line !== '');
-        
-        statusBarItem.tooltip = await createMarkdownTooltip(errorLines, true);
-        statusBarItem.show();
+        log(`[Critical] API error: ${error.message}`, true);
         log('[Status Bar] Status bar visibility updated after error');
     }
 }

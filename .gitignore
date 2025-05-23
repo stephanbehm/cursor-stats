@@ -10,3 +10,4 @@ builds/
 *.ps1
 user-cache.json
 currency-rates.json
+.cursorignore
