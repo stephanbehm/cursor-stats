@@ -166,6 +166,11 @@ export async function activate(context: vscode.ExtensionContext) {
           );
           await updateStats(statusBarItem);
         }
+        if (e.affectsConfiguration('cursorStats.spendingAlertThreshold')) {
+            log('[Settings] Spending alert threshold changed, resetting notifications and updating stats...');
+            resetNotifications(); // This will set isSpendingCheckInitialRun to true
+            await updateStats(statusBarItem); // This will trigger checkAndNotifySpending with the new logic
+        }
       }
     );
 

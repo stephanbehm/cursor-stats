@@ -94,7 +94,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             const usageBasedRequests = items.reduce((sum, item) => {
                 // Only count requests from positive cost items
                 if (parseFloat(item.totalDollars.replace('$', '')) > 0) {
-                    const match = item.calculation.match(/^(\d+)\s*\*/);
+                    const match = item.calculation.match(/^\*\*(\d+)\*\*/);
                     return sum + (match ? parseInt(match[1]) : 0);
                 }
                 return sum;

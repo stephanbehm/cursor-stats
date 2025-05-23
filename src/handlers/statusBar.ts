@@ -136,13 +136,6 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                         // Add weekday indication and daily remaining calculation (independent of progress bars)
                         if (periodInfo) {
                             const config = vscode.workspace.getConfiguration('cursorStats');
-                            const excludeWeekends = config.get<boolean>('excludeWeekends', false);
-
-                            // Show weekday indication if weekend exclusion is enabled
-                            if (excludeWeekends) {
-                                tooltip.appendMarkdown(`<div align="center">📅 Weekdays only mode enabled</div>\n\n`);
-                            }
-
                             // Parse the end date from the period info
                             const [startDateStr, endDateStr] = periodInfo.split('-').map(d => d.trim());
                             const currentYear = new Date().getFullYear();

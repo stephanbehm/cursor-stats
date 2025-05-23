@@ -42,8 +42,6 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
         log(`[Database] Attempting to open database at: ${dbPath}`);
 
         db = new Database(dbPath, { readOnly: true });
-        log('[Database] Database opened successfully with node-sqlite3-wasm');
-
         const row = db.get("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
         
         if (!row || !row.value) {
@@ -65,7 +63,6 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
             const sub = decoded.payload.sub.toString();
             const userId = sub.split('|')[1];
             const sessionToken = `${userId}%3A%3A${token}`;
-            log(`[Database] Created session token, length: ${sessionToken.length}`);
             return sessionToken;
         } catch (error: any) {
             log('[Database] Error processing token: ' + error, true);
@@ -86,7 +83,6 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
     } finally {
         if (db && db.isOpen) {
             db.close();
-            log('[Database] Database closed.');
         }
     }
 }

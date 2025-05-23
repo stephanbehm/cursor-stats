@@ -9,6 +9,7 @@ const notifiedUsageBasedThresholds = new Set<number>();
 const notifiedSpendingThresholds = new Set<number>();
 let isNotificationInProgress = false;
 let unpaidInvoiceNotifiedThisSession = false;
+let isSpendingCheckInitialRun = true; // New state variable for spending checks
 
 // Reset notification tracking
 export function resetNotifications() {
@@ -17,7 +18,8 @@ export function resetNotifications() {
     notifiedSpendingThresholds.clear();
     isNotificationInProgress = false;
     unpaidInvoiceNotifiedThisSession = false;
-    log('[Notifications] Reset notification tracking');
+    isSpendingCheckInitialRun = true; // Reset this flag as well
+    log('[Notifications] Reset notification tracking, including spending check initial run flag.');
 }
 
 export async function checkAndNotifySpending(totalSpent: number) {
@@ -28,45 +30,70 @@ export async function checkAndNotifySpending(totalSpent: number) {
     const config = vscode.workspace.getConfiguration('cursorStats');
     const spendingThreshold = config.get<number>('spendingAlertThreshold', 1);
     
-    // If threshold is 0, spending notifications are disabled
+    // If threshold is 0 or less, spending notifications are disabled
     if (spendingThreshold <= 0) {
+        log('[Notifications] Spending alerts disabled (threshold <= 0).');
         return;
     }
 
     try {
         isNotificationInProgress = true;
-        
-        // Calculate the next threshold to notify about (starting from 1, not 0)
-        const currentThresholdMultiple = Math.floor(totalSpent / spendingThreshold);
-        const nextNotificationAmount = (currentThresholdMultiple + 1) * spendingThreshold;
-        
-        // Only notify if we've passed the next notification amount and haven't notified about it
-        if (totalSpent >= nextNotificationAmount && !notifiedSpendingThresholds.has(currentThresholdMultiple + 1)) {
-            log(`[Notifications] Spending threshold reached (Total spent: $${totalSpent.toFixed(2)}, Next notification at: $${nextNotificationAmount.toFixed(2)})`);
-            
-            // Convert the amounts to the user's preferred currency
-            const formattedTotalSpent = await convertAndFormatCurrency(totalSpent);
-            const formattedNextThreshold = await convertAndFormatCurrency(nextNotificationAmount + spendingThreshold);
-            
-            const message = `Your Cursor usage spending has reached ${formattedTotalSpent}`;
-            const detail = `Next notification will be at ${formattedNextThreshold}. Click Manage Limit to adjust your usage settings.`;
-
-            // Show the notification
-            const notification = await vscode.window.showInformationMessage(
-                message,
-                { modal: false, detail },
-                'Manage Limit',
-                'Dismiss'
-            );
-
-            if (notification === 'Manage Limit') {
-                await vscode.commands.executeCommand('cursor-stats.setLimit');
+        if (isSpendingCheckInitialRun) {
+            // On the initial run (or after a reset), prime the notifiedSpendingThresholds
+            // by adding all multiples of spendingThreshold that are less than or equal to totalSpent.
+            const multiplesToPrime = Math.floor(totalSpent / spendingThreshold);
+            for (let i = 1; i <= multiplesToPrime; i++) {
+                notifiedSpendingThresholds.add(i);
             }
-
-            // Mark this threshold as notified
-            notifiedSpendingThresholds.add(currentThresholdMultiple + 1);
+            isSpendingCheckInitialRun = false; // Clear the flag after priming
         }
-    } finally {
+        
+        let lastNotifiedMultiple = 0;
+        if (notifiedSpendingThresholds.size > 0) {
+            lastNotifiedMultiple = Math.max(0, ...Array.from(notifiedSpendingThresholds));
+        }
+
+        let multipleToConsider = lastNotifiedMultiple + 1;
+        
+        while (true) {
+            const currentThresholdAmount = multipleToConsider * spendingThreshold;
+            if (totalSpent >= currentThresholdAmount) {
+                log(`[Notifications] Spending threshold $${currentThresholdAmount.toFixed(2)} met or exceeded (Total spent: $${totalSpent.toFixed(2)}). Triggering notification.`);
+                
+                const formattedCurrentThreshold = await convertAndFormatCurrency(currentThresholdAmount);
+                const formattedTotalSpent = await convertAndFormatCurrency(totalSpent);
+
+                // For the detail message, calculate the *next* threshold after the one we're notifying about
+                const nextHigherThresholdAmount = (multipleToConsider + 1) * spendingThreshold;
+                const formattedNextHigherThreshold = await convertAndFormatCurrency(nextHigherThresholdAmount);
+                
+                const message = `Your Cursor usage spending has reached ${formattedCurrentThreshold}`;
+                const detail = `Current total usage cost is ${formattedTotalSpent}. Next spending notification at ${formattedNextHigherThreshold}.`;
+
+                // Show the notification
+                const notificationSelection = await vscode.window.showInformationMessage(
+                    message,
+                    { modal: false, detail },
+                    'Manage Limit',
+                    'Dismiss'
+                );
+
+                if (notificationSelection === 'Manage Limit') {
+                    await vscode.commands.executeCommand('cursor-stats.setLimit');
+                }
+
+                // Mark this multiple as notified
+                notifiedSpendingThresholds.add(multipleToConsider);                
+                multipleToConsider++;
+            } else {
+                // totalSpent is less than currentThresholdAmount, so we haven't crossed this one yet. Stop.
+                break;
+            }
+        }
+    } catch (error) {
+        log(`[Notifications] Error during checkAndNotifySpending: ${error instanceof Error ? error.message : String(error)}`, true);
+    }
+    finally {
         isNotificationInProgress = false;
     }
 }
