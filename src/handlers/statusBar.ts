@@ -3,8 +3,13 @@ import { log } from '../utils/logger';
 import { getCurrentUsageLimit } from '../services/api';
 import { getCursorTokenFromDB } from '../services/database';
 import { convertAndFormatCurrency } from '../utils/currency';
-import { shouldShowProgressBars, createPeriodProgressBar, createUsageProgressBar } from '../utils/progressBars';
-
+import {
+  shouldShowProgressBars,
+  createPeriodProgressBar, 
+  createUsageProgressBar,
+  calculateDailyRemaining, 
+  getMonthNumber 
+  } from '../utils/progressBars';
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -125,6 +130,46 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                             const periodProgressBar = createPeriodProgressBar(periodInfo, undefined, 'Period');
                             if (periodProgressBar) {
                                 tooltip.appendMarkdown(`<div align="center">${periodProgressBar}</div>\n\n`);
+                            }
+                        }
+
+                        // Add weekday indication and daily remaining calculation (independent of progress bars)
+                        if (periodInfo) {
+                            const config = vscode.workspace.getConfiguration('cursorStats');
+                            const excludeWeekends = config.get<boolean>('excludeWeekends', false);
+
+                            // Show weekday indication if weekend exclusion is enabled
+                            if (excludeWeekends) {
+                                tooltip.appendMarkdown(`<div align="center">📅 Weekdays only mode enabled</div>\n\n`);
+                            }
+
+                            // Parse the end date from the period info
+                            const [startDateStr, endDateStr] = periodInfo.split('-').map(d => d.trim());
+                            const currentYear = new Date().getFullYear();
+                            const endParts = endDateStr.split(' ');
+                            const endDay = parseInt(endParts[0]);
+                            const endMonth = getMonthNumber(endParts[1]);
+                            let periodEndDate = new Date(currentYear, endMonth, endDay);
+
+                            // If end date is before start date, it means the period crosses into next year
+                            const startParts = startDateStr.split(' ');
+                            const startDay = parseInt(startParts[0]);
+                            const startMonth = getMonthNumber(startParts[1]);
+                            const periodStartDate = new Date(currentYear, startMonth, startDay);
+
+                            if (periodEndDate < periodStartDate) {
+                                periodEndDate.setFullYear(currentYear + 1);
+                            }
+
+                            const dailyRemainingText = calculateDailyRemaining(used, total, periodEndDate);
+                            if (dailyRemainingText) {
+                                // Handle multi-line daily remaining text
+                                const lines = dailyRemainingText.split('\n');
+                                lines.forEach(line => {
+                                    if (line.trim()) {
+                                        tooltip.appendMarkdown(`<div align="center">${line.trim()}</div>\n\n`);
+                                    }
+                                });
                             }
                         }
                     } else {
