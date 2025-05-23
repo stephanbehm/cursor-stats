@@ -16,7 +16,7 @@ import {
 import { updateStats } from './utils/updateStats';
 import { SUPPORTED_CURRENCIES } from './utils/currency';
 import { convertAndFormatCurrency } from './utils/currency';
-import { createReportCommand} from './utils/report';
+import { createReportCommand } from './utils/report';
 
 let statusBarItem: vscode.StatusBarItem;
 let extensionContext: vscode.ExtensionContext;
@@ -131,10 +131,13 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         });
 
-        // Add configuration change listener
-        const configListener = vscode.workspace.onDidChangeConfiguration(async (e) => {
-            if (e.affectsConfiguration('cursorStats.enableStatusBarColors')) {
-                log('[Settings] Status bar colors setting changed, updating display...');
+    // Add configuration change listener
+    const configListener = vscode.workspace.onDidChangeConfiguration(
+      async (e) => {
+        if (e.affectsConfiguration('cursorStats.enableStatusBarColors')) {
+          log(
+            '[Settings] Status bar colors setting changed, updating display...'
+          );
                 await updateStats(statusBarItem);
             }
             if (e.affectsConfiguration('cursorStats.refreshInterval')) {
@@ -142,15 +145,29 @@ export async function activate(context: vscode.ExtensionContext) {
                 startRefreshInterval();
             }
             if (e.affectsConfiguration('cursorStats.showTotalRequests')) {
-                log('[Settings] Show total requests setting changed, updating display...');
+          log(
+            '[Settings] Show total requests setting changed, updating display...'
+          );
                 await updateStats(statusBarItem);
             }
             if (e.affectsConfiguration('cursorStats.currency')) {
                 log('[Settings] Currency setting changed, updating display...');
                 await updateStats(statusBarItem);
             }
-        });
-        
+        if (e.affectsConfiguration('cursorStats.excludeWeekends')) {
+          log(
+            '[Settings] Exclude weekends setting changed, updating display...'
+          );
+          await updateStats(statusBarItem);
+        }
+        if (e.affectsConfiguration('cursorStats.showDailyRemaining')) {
+          log(
+            '[Settings] Show daily remaining setting changed, updating display...'
+          );
+          await updateStats(statusBarItem);
+        }
+      }
+    );
 
         const setLimitCommand = vscode.commands.registerCommand('cursor-stats.setLimit', async () => {
             const token = await getCursorTokenFromDB();

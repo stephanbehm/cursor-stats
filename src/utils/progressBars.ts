@@ -74,12 +74,18 @@ export function getProgressBarSettings(): ProgressBarSettings {
  * @param label Label for the progress bar
  * @returns Formatted progress bar with label and percentage
  */
-export function createPeriodProgressBar(startDate: string, endDate?: string, label: string = 'Period'): string {
-    if (!shouldShowProgressBars()) {
-        return '';
-    }
-    
-    const settings = getProgressBarSettings();
+export function createPeriodProgressBar(
+  startDate: string,
+  endDate?: string,
+  label: string = 'Period'
+): string {
+  if (!shouldShowProgressBars()) {
+    return '';
+  }
+
+  const settings = getProgressBarSettings();
+  const config = vscode.workspace.getConfiguration('cursorStats');
+  const excludeWeekends = config.get<boolean>('excludeWeekends', false);
     
     try {
         // Handle date formats like "17 April - 17 May" or "3 April - 2 May"
@@ -88,61 +94,77 @@ export function createPeriodProgressBar(startDate: string, endDate?: string, lab
         
         if (startDate.includes('-')) {
             // Parse date range in format like "17 April - 17 May"
-            const [startStr, endStr] = startDate.split('-').map(s => s.trim());
-            
-            // Get current year
-            const currentYear = new Date().getFullYear();
-            
-            // Parse start date
-            const startParts = startStr.split(' ');
-            const startDay = parseInt(startParts[0]);
-            const startMonth = getMonthNumber(startParts[1]);
-            
-            // Parse end date
-            const endParts = endStr.split(' ');
-            const endDay = parseInt(endParts[0]);
-            const endMonth = getMonthNumber(endParts[1]);
-            
-            // Create Date objects with current year
-            start = new Date(currentYear, startMonth, startDay);
-            end = new Date(currentYear, endMonth, endDay);
-            
-            // If end date is before start date, it means the period crosses into next year
-            if (end < start) {
-                end.setFullYear(currentYear + 1);
-            }
-        } else {
-            // Regular date parsing for ISO format dates
-            start = new Date(startDate);
-            end = endDate ? new Date(endDate) : getEndOfPeriod(start);
-        }
-        
-        const now = new Date();
-        
-        // Calculate total days in the period
-        const totalDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Calculate days elapsed
-        const elapsedDays = Math.round((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Calculate percentage elapsed
-        const percentage = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
-        
-        // Create the progress bar
-        const progressBar = createProgressBar(
-            percentage, 
-            settings.barLength, 
-            settings.warningThreshold, 
-            settings.criticalThreshold
-        );
-        
-        // Return with label but without percentage
-        return `${label}: ${progressBar}`;
-    } catch (error) {
-        // If date parsing fails, log error and return empty string
-        console.error(`Error creating period progress bar: ${error}`);
-        return `${label}: Error parsing dates`;
+      const [startStr, endStr] = startDate.split('-').map((s) => s.trim());
+
+      // Get current year
+      const currentYear = new Date().getFullYear();
+
+      // Parse start date
+      const startParts = startStr.split(' ');
+      const startDay = parseInt(startParts[0]);
+      const startMonth = getMonthNumber(startParts[1]);
+
+      // Parse end date
+      const endParts = endStr.split(' ');
+      const endDay = parseInt(endParts[0]);
+      const endMonth = getMonthNumber(endParts[1]);
+
+      // Create Date objects with current year
+      start = new Date(currentYear, startMonth, startDay);
+      end = new Date(currentYear, endMonth, endDay);
+
+      // If end date is before start date, it means the period crosses into next year
+      if (end < start) {
+        end.setFullYear(currentYear + 1);
+      }
+    } else {
+      // Regular date parsing for ISO format dates
+      start = new Date(startDate);
+      end = endDate ? new Date(endDate) : getEndOfPeriod(start);
     }
+
+    const now = new Date();
+
+    let totalDays: number;
+    let elapsedDays: number;
+
+    if (excludeWeekends) {
+      // Calculate weekdays only
+      totalDays = calculateWeekdays(start, end);
+      elapsedDays = calculateWeekdays(start, now);
+    } else {
+      // Calculate total days in the period (original logic)
+      totalDays = Math.round(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Calculate days elapsed
+      elapsedDays = Math.round(
+        (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
+    }
+
+    // Calculate percentage elapsed
+    const percentage = Math.min(
+      100,
+      Math.max(0, (elapsedDays / totalDays) * 100)
+    );
+
+    // Create the progress bar
+    const progressBar = createProgressBar(
+      percentage,
+      settings.barLength,
+      settings.warningThreshold,
+      settings.criticalThreshold
+    );
+
+    // Return with label but without percentage
+    return `${label}: ${progressBar}`;
+  } catch (error) {
+    // If date parsing fails, log error and return empty string
+    console.error(`Error creating period progress bar: ${error}`);
+    return `${label}: Error parsing dates`;
+  }
 }
 
 /**
@@ -150,7 +172,7 @@ export function createPeriodProgressBar(startDate: string, endDate?: string, lab
  * @param monthName Month name (e.g., "January", "Jan")
  * @returns Month number (0-11)
  */
-function getMonthNumber(monthName: string): number {
+export function getMonthNumber(monthName: string): number {
     const months: {[key: string]: number} = {
         'january': 0, 'jan': 0,
         'february': 1, 'feb': 1,
@@ -214,3 +236,107 @@ function getEndOfPeriod(startDate: Date): Date {
     
     return endDate;
 } 
+
+/**
+ * Calculate the number of weekdays between two dates (excluding weekends)
+ * @param startDate Start date
+ * @param endDate End date
+ * @returns Number of weekdays
+ */
+function calculateWeekdays(startDate: Date, endDate: Date): number {
+  let count = 0;
+  const current = new Date(startDate);
+
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    // 0 = Sunday, 6 = Saturday
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return count;
+}
+
+/**
+ * Calculate remaining weekdays from current date to end date
+ * @param endDate End date
+ * @returns Number of remaining weekdays
+ */
+export function calculateRemainingWeekdays(endDate: Date): number {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (today >= endDate) {
+    return 0;
+  }
+
+  return calculateWeekdays(today, endDate);
+}
+
+/**
+ * Check if current date is a weekend
+ * @returns True if current date is Saturday or Sunday
+ */
+export function isWeekend(): boolean {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+}
+
+/**
+ * Calculate daily remaining fast requests
+ * @param currentRequests Current number of requests used
+ * @param limitRequests Total request limit
+ * @param periodEndDate End date of the current period
+ * @returns Formatted string showing requests per day or weekend message
+ */
+export function calculateDailyRemaining(
+  currentRequests: number,
+  limitRequests: number,
+  periodEndDate: Date
+): string {
+  const config = vscode.workspace.getConfiguration('cursorStats');
+  const excludeWeekends = config.get<boolean>('excludeWeekends', false);
+  const showDailyRemaining = config.get<boolean>('showDailyRemaining', false);
+
+  if (!showDailyRemaining) {
+    return '';
+  }
+
+  const remainingRequests = limitRequests - currentRequests;
+
+  if (remainingRequests <= 0) {
+    return '📊 Daily Remaining: 0 requests/day (limit reached)';
+  }
+
+  if (excludeWeekends && isWeekend()) {
+    return '📊 Daily Remaining: Weekend - calculations resume Monday';
+  }
+
+  let remainingDays: number;
+
+  if (excludeWeekends) {
+    remainingDays = calculateRemainingWeekdays(periodEndDate);
+  } else {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    remainingDays = Math.max(
+      0,
+      Math.ceil(
+        (periodEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    );
+  }
+
+  if (remainingDays <= 0) {
+    return '📊 Daily Remaining: Period ending soon';
+  }
+
+  const requestsPerDay = Math.ceil(remainingRequests / remainingDays);
+  const dayType = excludeWeekends ? 'weekday' : 'day';
+  const dayTypePlural = excludeWeekends ? 'weekdays' : 'days';
+
+  return `📊 Daily Remaining: ${requestsPerDay} requests/${dayType}\n    (${remainingRequests} requests ÷ ${remainingDays} ${dayTypePlural})`;
+}

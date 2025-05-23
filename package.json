@@ -274,6 +274,18 @@
             "default": "",
             "description": "Custom path to the Cursor database file. Leave empty to use default location.",
             "scope": "window"
+          },
+          "cursorStats.excludeWeekends": {
+            "type": "boolean",
+            "default": false,
+            "description": "Exclude weekends from period progress calculations and daily remaining requests.",
+            "scope": "window"
+          },
+          "cursorStats.showDailyRemaining": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show estimated fast requests remaining per day in the tooltip.",
+            "scope": "window"
           }
         }
       }
