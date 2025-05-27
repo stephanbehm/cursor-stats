@@ -2,7 +2,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as jwt from 'jsonwebtoken';
 import * as vscode from 'vscode';
-import { Database } from 'node-sqlite3-wasm';
+import * as fs from 'fs';
+import initSqlJs from 'sql.js';
 import { log } from '../utils/logger';
 import { execSync } from 'child_process';
 
@@ -36,33 +37,44 @@ export function getCursorDBPath(): string {
 }
 
 export async function getCursorTokenFromDB(): Promise<string | undefined> {
-    let db: Database | undefined = undefined;
     try {
         const dbPath = getCursorDBPath();
         log(`[Database] Attempting to open database at: ${dbPath}`);
 
-        db = new Database(dbPath, { readOnly: true });
-        const row = db.get("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
-        
-        if (!row || !row.value) {
-            log('[Database] No token found in database');
+        if (!fs.existsSync(dbPath)) {
+            log('[Database] Database file does not exist', true);
             return undefined;
         }
 
-        const token = row.value as string;
+        const dbBuffer = fs.readFileSync(dbPath);
+        const SQL = await initSqlJs();
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
+
+        const result = db.exec("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
+        
+        if (!result.length || !result[0].values.length) {
+            log('[Database] No token found in database');
+            db.close();
+            return undefined;
+        }
+
+        const token = result[0].values[0][0] as string;
         log(`[Database] Token starts with: ${token.substring(0, 20)}...`);
 
         try {
             const decoded = jwt.decode(token, { complete: true });
 
-            if (!decoded || typeof decoded !== 'object' || !decoded.payload || typeof decoded.payload !== 'object' || !decoded.payload.sub) {
+            if (!decoded || !decoded.payload || !decoded.payload.sub) {
                 log('[Database] Invalid JWT structure: ' + JSON.stringify({ decoded }), true);
+                db.close();
                 return undefined;
             }
 
             const sub = decoded.payload.sub.toString();
             const userId = sub.split('|')[1];
             const sessionToken = `${userId}%3A%3A${token}`;
+            log(`[Database] Created session token, length: ${sessionToken.length}`);
+            db.close();
             return sessionToken;
         } catch (error: any) {
             log('[Database] Error processing token: ' + error, true);
@@ -71,19 +83,16 @@ export async function getCursorTokenFromDB(): Promise<string | undefined> {
                 message: error.message,
                 stack: error.stack
             }), true);
+            db.close();
             return undefined;
         }
     } catch (error: any) {
-        log('[Database] Error with database operation: ' + error, true);
+        log('[Database] Error opening database: ' + error, true);
         log('[Database] Database error details: ' + JSON.stringify({
             message: error.message,
             stack: error.stack
         }), true);
         return undefined;
-    } finally {
-        if (db && db.isOpen) {
-            db.close();
-        }
     }
 }
 export function getWindowsUsername(): string | undefined {

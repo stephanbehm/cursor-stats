@@ -279,7 +279,14 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                     (line.includes('*') || line.includes('→')) && 
                     line.includes('➜') &&
                     !line.includes('Mid-month payment:') // Exclude the mid-month payment line item
-                );
+                )
+                .sort((a, b) => {
+                    // Extract request count from the line (e.g., "   • **042** req @ $0.001~ ➜  **$0.04**   (gpt-4-turbo)")
+                    // The count is between the first pair of double asterisks.
+                    const countA = parseInt(a.match(/\*\*(\d+)\*\*/)?.[1] || '0');
+                    const countB = parseInt(b.match(/\*\*(\d+)\*\*/)?.[1] || '0');
+                    return countB - countA; // Sort in descending order
+                });
 
                 if (pricingLines.length > 0) {
                     // Find mid-month payment from the lines directly
