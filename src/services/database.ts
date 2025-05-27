@@ -7,11 +7,23 @@ import initSqlJs from 'sql.js';
 import { log } from '../utils/logger';
 import { execSync } from 'child_process';
 
+// use globalStorageUri to get the user directory path
+// support Portable mode : https://code.visualstudio.com/docs/editor/portable
+function getDefaultUserDirPath(): string {
+    // Import getExtensionContext here to avoid circular dependency
+    const { getExtensionContext } = require('../extension');
+    const context = getExtensionContext();
+    const extensionGlobalStoragePath = context.globalStorageUri.fsPath;
+    const userDirPath = path.dirname(path.dirname(path.dirname(extensionGlobalStoragePath)));
+    log(`[Database] Default user directory path: ${userDirPath}`);
+    return userDirPath;
+}
 
 export function getCursorDBPath(): string {
     // Check for custom path in settings
     const config = vscode.workspace.getConfiguration('cursorStats');
     const customPath = config.get<string>('customDatabasePath');
+    const userDirPath = getDefaultUserDirPath();
     
     if (customPath && customPath.trim() !== '') {
         log(`[Database] Using custom path: ${customPath}`);
@@ -20,7 +32,7 @@ export function getCursorDBPath(): string {
     const folderName = vscode.env.appName;
 
     if (process.platform === 'win32') {
-        return path.join(process.env.APPDATA || '', folderName, 'User', 'globalStorage', 'state.vscdb');
+        return path.join(userDirPath, 'User', 'globalStorage', 'state.vscdb');
     } else if (process.platform === 'linux') {
         const isWSL = vscode.env.remoteName === 'wsl';
         if (isWSL) {
@@ -29,11 +41,11 @@ export function getCursorDBPath(): string {
                 return path.join('/mnt/c/Users', windowsUsername, 'AppData/Roaming', folderName, 'User/globalStorage/state.vscdb');
             }
         }
-        return path.join(os.homedir(), '.config', folderName, 'User', 'globalStorage', 'state.vscdb');
+        return path.join(userDirPath, 'User', 'globalStorage', 'state.vscdb');
     } else if (process.platform === 'darwin') {
-        return path.join(os.homedir(), 'Library', 'Application Support', folderName, 'User', 'globalStorage', 'state.vscdb');
+        return path.join(userDirPath, 'User', 'globalStorage', 'state.vscdb');
     }
-    return path.join(os.homedir(), '.config', folderName, 'User', 'globalStorage', 'state.vscdb');
+    return path.join(userDirPath, 'User', 'globalStorage', 'state.vscdb');
 }
 
 export async function getCursorTokenFromDB(): Promise<string | undefined> {
