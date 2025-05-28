@@ -19,6 +19,14 @@ All notable changes to the "cursor-stats" extension will be documented in this f
   - Hide/show specific model statistics
   - Customizable status bar information
 
+## [1.1.3] - 2024-07-27
+
+### Reverted
+- ⏪ Reverted the SQLite library change introduced in `v1.1.2` (from `node-sqlite3-wasm` back to `sql.js`). This addresses critical token retrieval errors experienced by some users, particularly on Macos.
+
+### Fixed
+- 🐛 Fixed an issue where some users could not retrieve their access token after the `v1.1.2` update due to the new SQLite library.
+
 ## [1.1.2] - 2025-05-23
 
 ### Added
