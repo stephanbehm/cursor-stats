@@ -17,6 +17,7 @@ import { updateStats } from './utils/updateStats';
 import { SUPPORTED_CURRENCIES } from './utils/currency';
 import { convertAndFormatCurrency } from './utils/currency';
 import { createReportCommand } from './utils/report';
+import { initializeI18n, t, setOnLanguageChangeCallback } from './utils/i18n';
 
 let statusBarItem: vscode.StatusBarItem;
 let extensionContext: vscode.ExtensionContext;
@@ -43,6 +44,15 @@ export async function activate(context: vscode.ExtensionContext) {
     try {
         // Initialize logging first
         initializeLogging(context);
+        
+        // Initialize i18n system
+        initializeI18n();
+        
+        // 设置语言变更回调
+        setOnLanguageChangeCallback((_newLanguage: string, languageLabel: string) => {
+            const message = t('commands.languageChanged', { language: languageLabel });
+            vscode.window.showInformationMessage(message);
+        });
         
         log('[Initialization] Extension activation started');
         extensionContext = context;
@@ -171,6 +181,10 @@ export async function activate(context: vscode.ExtensionContext) {
             resetNotifications(); // This will set isSpendingCheckInitialRun to true
             await updateStats(statusBarItem); // This will trigger checkAndNotifySpending with the new logic
         }
+        if (e.affectsConfiguration('cursorStats.language')) {
+            log('[Settings] Language setting changed, updating display...');
+            await updateStats(statusBarItem);
+        }
       }
     );
 
@@ -289,6 +303,36 @@ export async function activate(context: vscode.ExtensionContext) {
                     await config.update('currency', selected.code, vscode.ConfigurationTarget.Global);
                     log(`[Settings] Currency changed to ${selected.code}`);
                     await updateStats(statusBarItem);
+                }
+            }),
+            vscode.commands.registerCommand('cursor-stats.selectLanguage', async () => {
+                log('[Command] Opening language selection...');
+                const languages = [
+                    { label: 'English', value: 'en' },
+                    { label: '中文', value: 'zh' },
+                    { label: '한국어', value: 'ko' }
+                ];
+                
+                const currentLanguage = vscode.workspace.getConfiguration('cursorStats').get<string>('language', 'en');
+                const currentLabel = languages.find(lang => lang.value === currentLanguage)?.label || 'English';
+                
+                const selectedLanguage = await vscode.window.showQuickPick(
+                    languages.map(lang => ({
+                        label: lang.label,
+                        description: lang.value === currentLanguage ? '(Current)' : '',
+                        value: lang.value
+                    })),
+                    {
+                        placeHolder: `Current: ${currentLabel}. Select a language for Cursor Stats interface`,
+                        title: 'Select Language / 选择语言 / 언어 선택'
+                    }
+                );
+                
+                if (selectedLanguage && selectedLanguage.value !== currentLanguage) {
+                    const config = vscode.workspace.getConfiguration('cursorStats');
+                    await config.update('language', selectedLanguage.value, vscode.ConfigurationTarget.Global);
+                    log(`[Command] Language changed to: ${selectedLanguage.value}`);
+                    // 成功消息会通过onLanguageChangeCallback自动显示
                 }
             })
         );

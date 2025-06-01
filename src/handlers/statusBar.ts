@@ -3,6 +3,7 @@ import { log } from '../utils/logger';
 import { getCurrentUsageLimit } from '../services/api';
 import { getCursorTokenFromDB } from '../services/database';
 import { convertAndFormatCurrency } from '../utils/currency';
+import { t } from '../utils/i18n';
 import {
   shouldShowProgressBars,
   createPeriodProgressBar, 
@@ -76,17 +77,17 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
 
     // Header section with centered title
     tooltip.appendMarkdown('<div align="center">\n\n');
-    tooltip.appendMarkdown('## ⚡ Cursor Usage Stats\n\n');
+    tooltip.appendMarkdown(`## ⚡ ${t('statusBar.cursorUsageStats')}\n\n`);
     tooltip.appendMarkdown('</div>\n\n');
 
     if (isError) {
-        tooltip.appendMarkdown('> ⚠️ **Error State**\n\n');
+        tooltip.appendMarkdown(`> ⚠️ **${t('statusBar.errorState')}**\n\n`);
         tooltip.appendMarkdown(lines.join('\n\n'));
     } else {
         // Premium Requests Section
         if (lines.some(line => line.includes('Premium Fast Requests'))) {
             tooltip.appendMarkdown('<div align="center">\n\n');
-            tooltip.appendMarkdown('### 🚀 Premium Fast Requests\n\n');
+            tooltip.appendMarkdown(`### 🚀 ${t('statusBar.premiumFastRequests')}\n\n`);
             tooltip.appendMarkdown('</div>\n\n');
             
             // Extract and format premium request info
@@ -222,7 +223,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                 const usageBasedPeriodLine = lines.find(line => line.includes('Usage Based Period:'));
 
                 tooltip.appendMarkdown('<div align="center">\n\n');
-                tooltip.appendMarkdown(`### 📈 Usage-Based Pricing (${isEnabled ? 'Enabled' : 'Disabled'})\n\n`);
+                tooltip.appendMarkdown(`### 📈 ${t('statusBar.usageBasedPricing')} (${isEnabled ? t('statusBar.enabled') : t('statusBar.disabled')})\n\n`);
                 tooltip.appendMarkdown('</div>\n\n');
                 
                 if (isEnabled && limitResponse.hardLimit) {
@@ -270,7 +271,7 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                         }
                     }
                 } else if (!isEnabled) {
-                    tooltip.appendMarkdown('> ℹ️ Usage-based pricing is currently disabled\n\n');
+                    tooltip.appendMarkdown(`> ℹ️ ${t('statusBar.usageBasedDisabled')}\n\n`);
                 }
                 
                 // Show usage details regardless of enabled/disabled status
@@ -320,17 +321,17 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
                         const formattedUnpaidAmount = extractedUnpaidAmountStr || await convertAndFormatCurrency(unpaidAmount);
                         
                         // Use the already formatted informational line, just add the unpaid part dynamically
-                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (Unpaid: **${formattedUnpaidAmount}**)\n\n`);
+                        tooltip.appendMarkdown(`> ${informationalMidMonthLine.trim()}. (${t('statusBar.unpaidAmount', { amount: `**${formattedUnpaidAmount}**` })})\n\n`);
                     }
                 } else {
-                    tooltip.appendMarkdown('> ℹ️ No usage recorded for this period\n\n');
+                    tooltip.appendMarkdown(`> ℹ️ ${t('statusBar.noUsageRecorded')}\n\n`);
                 }
             } catch (error: any) {
                 log('[API] Error fetching limit for tooltip: ' + error.message, true);
-                tooltip.appendMarkdown('> ⚠️ Error checking usage-based pricing status\n\n');
+                tooltip.appendMarkdown(`> ⚠️ ${t('statusBar.errorCheckingStatus')}\n\n`);
             }
         } else {
-            tooltip.appendMarkdown('> ⚠️ Unable to check usage-based pricing status\n\n');
+            tooltip.appendMarkdown(`> ⚠️ ${t('statusBar.unableToCheckStatus')}\n\n`);
         }
     }
 
@@ -339,16 +340,16 @@ export async function createMarkdownTooltip(lines: string[], isError: boolean = 
     tooltip.appendMarkdown('<div align="center">\n\n');
     
     // First row: Account and Extension settings
-    tooltip.appendMarkdown('🌐 [Account Settings](https://www.cursor.com/settings) • ');
-    tooltip.appendMarkdown('🌍 [Currency](command:cursor-stats.selectCurrency) • ');
-    tooltip.appendMarkdown('⚙️ [Extension Settings](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats%22)\n\n');
+    tooltip.appendMarkdown(`🌐 [${t('statusBar.accountSettings')}](https://www.cursor.com/settings) • `);
+    tooltip.appendMarkdown(`🌍 [${t('statusBar.currency')}](command:cursor-stats.selectCurrency) • `);
+    tooltip.appendMarkdown(`⚙️ [${t('statusBar.extensionSettings')}](command:workbench.action.openSettings?%22@ext%3ADwtexe.cursor-stats%22)\n\n`);
     
     // Second row: Usage Based Pricing, Refresh, and Last Updated
     const updatedLine = lines.find(line => line.includes('Last Updated:'));
     const updatedTime = updatedLine ? formatRelativeTime(updatedLine.split(':').slice(1).join(':').trim()) : new Date().toLocaleTimeString();
     
-    tooltip.appendMarkdown('💰 [Usage Based Pricing](command:cursor-stats.setLimit) • ');
-    tooltip.appendMarkdown('🔄 [Refresh](command:cursor-stats.refreshStats) • ');
+    tooltip.appendMarkdown(`💰 [${t('statusBar.usageBasedPricing')}](command:cursor-stats.setLimit) • `);
+    tooltip.appendMarkdown(`🔄 [${t('statusBar.refresh')}](command:cursor-stats.refreshStats) • `);
     tooltip.appendMarkdown(`🕒 ${updatedTime}\n\n`);
     
     tooltip.appendMarkdown('</div>');
@@ -419,12 +420,13 @@ export function getStatusBarColor(percentage: number): vscode.ThemeColor | strin
 }
 
 export function getMonthName(month: number): string {
-    const months = [
-        'January', 'February', 'March', 'April',
-        'May', 'June', 'July', 'August',
-        'September', 'October', 'November', 'December'
+    const monthKeys = [
+        'january', 'february', 'march', 'april',
+        'may', 'june', 'july', 'august',
+        'september', 'october', 'november', 'december'
     ];
-    return months[month - 1];
+    const monthKey = monthKeys[month - 1];
+    return monthKey ? t(`statusBar.months.${monthKey}`) : `Month ${month}`;
 }
 
 function calculateDateElapsedPercentage(startDateStr: string, endDateStr: string): number {

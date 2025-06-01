@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { log } from '../utils/logger';
 import { convertAndFormatCurrency } from '../utils/currency';
 import { UsageInfo } from '../interfaces/types';
+import { t } from '../utils/i18n';
 
 // Track which thresholds have been notified in the current session
 const notifiedPremiumThresholds = new Set<number>();
