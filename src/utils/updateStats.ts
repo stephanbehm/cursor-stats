@@ -80,8 +80,15 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         let totalUsageText = '';
         let totalRequests = stats.premiumRequests.current;
 
-        if (stats.lastMonth.usageBasedPricing.items.length > 0) {
-            const items = stats.lastMonth.usageBasedPricing.items;
+        // Use current month if it has data, otherwise fall back to last month
+        const activeMonthData = stats.currentMonth.usageBasedPricing.items.length > 0 
+            ? stats.currentMonth 
+            : stats.lastMonth;
+        
+        log(`[Stats] Using ${activeMonthData === stats.currentMonth ? 'current' : 'last'} month data (${activeMonthData.month}/${activeMonthData.year})`);
+        
+        if (activeMonthData.usageBasedPricing.items.length > 0) {
+            const items = activeMonthData.usageBasedPricing.items;
             
             // Calculate actual total cost (sum of positive items only)
             const actualTotalCost = items.reduce((sum, item) => {
@@ -156,8 +163,8 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             '📈 Usage-Based Pricing'
         );
         
-        if (stats.lastMonth.usageBasedPricing.items.length > 0) {
-            const items = stats.lastMonth.usageBasedPricing.items;
+        if (activeMonthData.usageBasedPricing.items.length > 0) {
+            const items = activeMonthData.usageBasedPricing.items;
 
             // Calculate actual total cost (sum of positive items only)
             const actualTotalCost = items.reduce((sum, item) => {
@@ -165,15 +172,14 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 return cost > 0 ? sum + cost : sum;
             }, 0);
             
-            // Calculate usage-based pricing period
+            // Calculate usage-based pricing period for the active month
             const billingDay = 3;
-            const currentDate = new Date();
-            let periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay);
-            let periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, billingDay - 1);
+            let periodStart = new Date(activeMonthData.year, activeMonthData.month - 1, billingDay);
+            let periodEnd = new Date(activeMonthData.year, activeMonthData.month, billingDay - 1);
             
-            if (currentDate.getDate() < billingDay) {
-                periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, billingDay);
-                periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), billingDay - 1);
+            // Adjust year if period spans across year boundary
+            if (periodEnd < periodStart) {
+                periodEnd.setFullYear(periodEnd.getFullYear() + 1);
             }
             
             contentLines.push(
@@ -181,7 +187,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             );
             
             // Calculate unpaid amount correctly
-            const unpaidAmount = Math.max(0, actualTotalCost - stats.lastMonth.usageBasedPricing.midMonthPayment);
+            const unpaidAmount = Math.max(0, actualTotalCost - activeMonthData.usageBasedPricing.midMonthPayment);
             
             // Calculate usage percentage based on actual total cost (always in USD)
             const usagePercentage = usageStatus.limit ? ((actualTotalCost / usageStatus.limit) * 100).toFixed(1) : '0.0';
@@ -199,7 +205,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 percentage: usagePercentage
             };
             
-            if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
+            if (activeMonthData.usageBasedPricing.midMonthPayment > 0) {
                 contentLines.push(
                     formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line
@@ -354,8 +360,8 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 }
             }
 
-            if (stats.lastMonth.usageBasedPricing.midMonthPayment > 0) {
-                const formattedMidMonthPayment = await convertAndFormatCurrency(stats.lastMonth.usageBasedPricing.midMonthPayment);
+            if (activeMonthData.usageBasedPricing.midMonthPayment > 0) {
+                const formattedMidMonthPayment = await convertAndFormatCurrency(activeMonthData.usageBasedPricing.midMonthPayment);
                 contentLines.push(
                     '',
                     formatTooltipLine(`ℹ️ You have paid **${formattedMidMonthPayment}** of this cost already`)
@@ -378,7 +384,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 }, 1000);
             }
         } else {
-            contentLines.push('   ℹ️ No usage data for last month');
+            contentLines.push('   ℹ️ No usage data available');
         }
 
         // Calculate separator width based on content
@@ -426,7 +432,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                     });
                 }
 
-                if (stats.lastMonth.usageBasedPricing.hasUnpaidMidMonthInvoice) {
+                if (activeMonthData.usageBasedPricing.hasUnpaidMidMonthInvoice) {
                     checkAndNotifyUnpaidInvoice(token);
                 }
             }, 1000);
