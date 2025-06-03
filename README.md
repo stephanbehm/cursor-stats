@@ -130,6 +130,36 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 - 🐛 [Report Issues](https://github.com/Dwtexe/cursor-stats/issues)
 - 💡 [Feature Requests](https://github.com/Dwtexe/cursor-stats/issues/new)
 
+## 🌍 Language Support
+
+Cursor Stats now supports multiple languages for the interface:
+
+### Available Languages
+- **English** (Default)
+- **中文** (Chinese)
+- **한국어** (Korean)
+
+### How to Change Language
+
+1. **Via Command Palette:**
+   - Press `Ctrl+Shift+P` (Windows/Linux) or `⌘⇧P` (Mac)
+   - Type "Cursor Stats: Select Language"
+   - Choose your preferred language
+
+2. **Via Settings:**
+   - Open VS Code Settings (`Ctrl+,` or `⌘,`)
+   - Search for "cursor stats language"
+   - Select from the dropdown: `en`, `zh`, or `ko`
+
+### Features in Multiple Languages
+- Status bar text and tooltips
+- Notification messages
+- Command titles
+- Settings descriptions
+- Error messages
+
+The interface will update automatically when you change the language setting.
+
 ## 💝 Donations
 
 If you find this extension helpful, consider supporting its development:

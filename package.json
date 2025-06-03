@@ -58,6 +58,10 @@
         "command": "cursor-stats.createReport",
         "title": "Cursor Stats: Generate Diagnostic Report",
         "icon": "$(notebook)"
+      },
+      {
+        "command": "cursor-stats.selectLanguage",
+        "title": "Cursor Stats: Select Language"
       }
     ],
     "configuration": [
@@ -338,6 +342,21 @@
             "default": false,
             "description": "Show estimated fast requests remaining per day in the tooltip.",
             "scope": "window"
+          },
+          "cursorStats.language": {
+            "type": "string",
+            "default": "en",
+            "enum": [
+              "en",
+              "zh",
+              "ko"
+            ],
+            "enumDescriptions": [
+              "English",
+              "中文 (Chinese)",
+              "한국어 (Korean)"
+            ],
+            "description": "Language for the extension interface and messages."
           }
         }
       }
