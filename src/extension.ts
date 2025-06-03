@@ -288,10 +288,10 @@ export async function activate(context: vscode.ExtensionContext) {
         // Register package.json configuration contribution
         context.subscriptions.push(
             vscode.commands.registerCommand('cursor-stats.selectCurrency', async () => {
-                const currencyPicks = SUPPORTED_CURRENCIES.map(currency => ({
-                    label: `${currency.code} (${currency.name})`,
-                    description: currency.code === 'USD' ? 'Default' : '',
-                    code: currency.code
+                const currencyPicks = SUPPORTED_CURRENCIES.map(code => ({
+                    label: `${code} (${t('currency.' + code.toLowerCase())})`,
+                    description: code === 'USD' ? 'Default' : '',
+                    code
                 }));
                 
                 const selected = await vscode.window.showQuickPick(currencyPicks, {
