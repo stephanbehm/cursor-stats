@@ -221,7 +221,7 @@ export function extractUserUsage(teamUsage: TeamUsageResponse, userId: number) {
     });
 
     return {
-        numRequests: gpt4Usage.numRequests,
+        numRequests: gpt4Usage.numRequests ?? 0,
         maxRequestUsage: gpt4Usage.maxRequestUsage
     };
 } 
