@@ -17,6 +17,7 @@ import {
 import { createMarkdownTooltip, formatTooltipLine, getMaxLineWidth, getStatusBarColor, createSeparator } from '../handlers/statusBar';
 import * as vscode from 'vscode';
 import { convertAndFormatCurrency, getCurrentCurrency } from './currency';
+import { t } from './i18n';
 
 // Track unknown models to avoid repeated notifications
 let unknownModelNotificationShown = false;
@@ -30,10 +31,10 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
        
         if (!token) {
             log('[Critical] No valid token found', true);
-            statusBarItem.text = "$(alert) Cursor Stats: No token found";
+            statusBarItem.text = `$(alert) ${t('statusBar.noTokenFound')}`;
             statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorBackground');
             const tooltipLines = [
-                '⚠️ Could not retrieve Cursor token from database'
+                t('statusBar.couldNotRetrieveToken')
             ];
             statusBarItem.tooltip = await createMarkdownTooltip(tooltipLines, true);
             log('[Status Bar] Updated status bar with no token message');
@@ -136,11 +137,11 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
         statusBarItem.color = getStatusBarColor(usagePercent);
 
         // Build content first to determine width
-        const title = '⚡ Cursor Usage Statistics ⚡';
+        const title = t('statusBar.cursorUsageStats');
         const contentLines = [
             title,
             '',
-            '🚀 Premium Fast Requests'
+            t('statusBar.premiumFastRequests')
         ];
         
         // Format premium requests progress with fixed decimal places
@@ -151,16 +152,30 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
 
         const formatDateWithMonthName = (date: Date) => {
             const day = date.getDate();
-            const monthName = date.toLocaleString('en-US', { month: 'long' });
+            const monthNames = [
+                t('statusBar.months.january'),
+                t('statusBar.months.february'),
+                t('statusBar.months.march'),
+                t('statusBar.months.april'),
+                t('statusBar.months.may'),
+                t('statusBar.months.june'),
+                t('statusBar.months.july'),
+                t('statusBar.months.august'),
+                t('statusBar.months.september'),
+                t('statusBar.months.october'),
+                t('statusBar.months.november'),
+                t('statusBar.months.december')
+            ];
+            const monthName = monthNames[date.getMonth()];
             return `${day} ${monthName}`;
         };
 
         contentLines.push(
-            formatTooltipLine(`   • ${stats.premiumRequests.current}/${stats.premiumRequests.limit} requests used`),
-            formatTooltipLine(`   📊 ${premiumPercentFormatted}% utilized`),
-            formatTooltipLine(`   Fast Requests Period: ${formatDateWithMonthName(startDate)} - ${formatDateWithMonthName(endDate)}`),
+            formatTooltipLine(`   • ${stats.premiumRequests.current}/${stats.premiumRequests.limit} ${t('statusBar.requestsUsed')}`),
+            formatTooltipLine(`   📊 ${premiumPercentFormatted}% ${t('statusBar.utilized')}`),
+            formatTooltipLine(`   ${t('statusBar.fastRequestsPeriod')}: ${formatDateWithMonthName(startDate)} - ${formatDateWithMonthName(endDate)}`),
             '',
-            '📈 Usage-Based Pricing'
+            t('statusBar.usageBasedPricing')
         );
         
         if (activeMonthData.usageBasedPricing.items.length > 0) {
@@ -183,7 +198,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             }
             
             contentLines.push(
-                formatTooltipLine(`   Usage Based Period: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
+                formatTooltipLine(`   ${t('statusBar.usageBasedPeriod')}: ${formatDateWithMonthName(periodStart)} - ${formatDateWithMonthName(periodEnd)}`),
             );
             
             // Calculate unpaid amount correctly
@@ -207,13 +222,13 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             
             if (activeMonthData.usageBasedPricing.midMonthPayment > 0) {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost} - Unpaid: ${formattedUnpaidAmount})`),
+                    formatTooltipLine(`   ${t('statusBar.currentUsage')} (${t('statusBar.total')}: ${formattedActualTotalCost} - ${t('statusBar.unpaid')}: ${formattedUnpaidAmount})`),
                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line
                     ''
                 );
             } else {
                 contentLines.push(
-                    formatTooltipLine(`   Current Usage (Total: ${formattedActualTotalCost})`),
+                    formatTooltipLine(`   ${t('statusBar.currentUsage')} (${t('statusBar.total')}: ${formattedActualTotalCost})`),
                     formatTooltipLine(`   __USD_USAGE_DATA__:${JSON.stringify(originalUsageData)}`), // Hidden metadata line 
                     ''
                 );
@@ -325,9 +340,9 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                         const isUnknown = modelName === "unknown-model";
 
                         if (isDiscounted) {
-                            modelNameDisplay = `(discounted | ${isUnknown ? "unknown-model" : modelName})`;
+                            modelNameDisplay = `(${t('statusBar.discounted')} | ${isUnknown ? t('statusBar.unknownModel') : modelName})`;
                         } else if (isUnknown) {
-                            modelNameDisplay = "(unknown-model)";
+                            modelNameDisplay = `(${t('statusBar.unknownModel')})`;
                         } else {
                             modelNameDisplay = `(${modelName})`;
                         }
@@ -355,7 +370,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                     formattedItemCost = currencySymbol + paddedNumericalPart;
                     
                     // Use a generic calculation string if item.calculation is also missing, or the original if available
-                    const calculationString = item.calculation || "Unknown Item"; 
+                    const calculationString = item.calculation || t('statusBar.unknownItem'); 
                     contentLines.push(formatTooltipLine(`   • ${calculationString} ➜ &nbsp;&nbsp;**${formattedItemCost}**`));
                 }
             }
@@ -364,14 +379,14 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 const formattedMidMonthPayment = await convertAndFormatCurrency(activeMonthData.usageBasedPricing.midMonthPayment);
                 contentLines.push(
                     '',
-                    formatTooltipLine(`ℹ️ You have paid **${formattedMidMonthPayment}** of this cost already`)
+                    formatTooltipLine(t('statusBar.youHavePaid', { amount: formattedMidMonthPayment }))
                 );
             }
 
             const formattedFinalCost = await convertAndFormatCurrency(actualTotalCost);
             contentLines.push(
                 '',
-                formatTooltipLine(`💳 Total Cost: ${formattedFinalCost}`)
+                formatTooltipLine(`💳 ${t('statusBar.totalCost')}: ${formattedFinalCost}`)
             );
 
             // Update costText for status bar here, using actual total cost
@@ -384,7 +399,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
                 }, 1000);
             }
         } else {
-            contentLines.push('   ℹ️ No usage data available');
+            contentLines.push(`   ℹ️ ${t('statusBar.noUsageDataAvailable')}`);
         }
 
         // Calculate separator width based on content
@@ -400,7 +415,7 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             separator,
             ...visibleContentLines.slice(1),
             '',
-            formatTooltipLine(`🕒 Last Updated: ${new Date().toLocaleString()}`),
+            formatTooltipLine(`🕒 ${t('time.lastUpdated')}: ${new Date().toLocaleString()}`),
         ];
 
         // Update usage based percent for notifications
@@ -452,13 +467,13 @@ export async function updateStats(statusBarItem: vscode.StatusBarItem) {
             log(`[Stats] Showing notification for aggregated unknown models: ${unknownModelsString}`);
             
             vscode.window.showInformationMessage(
-                `New or unhandled Cursor model terms detected: "${unknownModelsString}". If these seem like new models, please create a report and submit it on GitHub.`,
-                'Create Report',
-                'Open GitHub Issues'
+                t('notifications.unknownModelsDetected', { models: unknownModelsString }),
+                t('commands.createReport'),
+                t('commands.openGitHubIssues')
             ).then(selection => {
-                if (selection === 'Create Report') {
+                if (selection === t('commands.createReport')) {
                     vscode.commands.executeCommand('cursor-stats.createReport');
-                } else if (selection === 'Open GitHub Issues') {
+                } else if (selection === t('commands.openGitHubIssues')) {
                     vscode.env.openExternal(vscode.Uri.parse('https://github.com/Dwtexe/cursor-stats/issues/new'));
                 }
             });

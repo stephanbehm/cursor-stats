@@ -5,6 +5,7 @@ import { log } from '../utils/logger';
 import * as vscode from 'vscode';
 import { marked } from 'marked';
 import { getExtensionContext } from '../extension';
+import { t } from '../utils/i18n';
 
 const SHOWN_CHANGELOGS_KEY = 'shownChangelogs';
 
@@ -103,8 +104,12 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 			
 			// Check if this version's changelog has been shown before
 			if (!shownChangelogs.includes(releaseInfo.latestVersion)) {
-				const releaseType = releaseInfo.isPrerelease ? 'Pre-release' : 'Stable release';
-				const message = `${releaseType} ${releaseInfo.releaseName} is available! You are on ${releaseInfo.currentVersion}`;
+							const releaseType = releaseInfo.isPrerelease ? t('github.preRelease') : t('github.stableRelease');
+			const message = t('github.updateAvailable', { 
+				releaseType: releaseType, 
+				releaseName: releaseInfo.releaseName, 
+				currentVersion: releaseInfo.currentVersion 
+			});
 				log(`[GitHub] Showing update notification: ${message}`);
 
 				// Show changelog directly without asking
@@ -146,16 +151,16 @@ export async function checkForUpdates(lastReleaseCheck: number, RELEASE_CHECK_IN
 function showChangelogWebview(release: GitHubRelease, version: string): void {
 	try {
 		const context = getExtensionContext();
-		const releaseType = release.prerelease ? 'Pre-release' : 'Stable release';
-		
-		const panel = vscode.window.createWebviewPanel(
-			'releaseNotes',
-			`${releaseType} ${version} Changes`,
-			vscode.ViewColumn.One,
-			{
-				enableScripts: false
-			}
-		);
+			const releaseType = release.prerelease ? t('github.preRelease') : t('github.stableRelease');
+	
+	const panel = vscode.window.createWebviewPanel(
+		'releaseNotes',
+		t('github.changesTitle', { releaseType: releaseType, version: version }),
+		vscode.ViewColumn.One,
+		{
+			enableScripts: false
+		}
+	);
 
 		const markdownContent = marked(release.body);
 
@@ -298,7 +303,7 @@ function showChangelogWebview(release: GitHubRelease, version: string): void {
 					<div class="release-header">
 						<h1 class="release-title">
 							${release.name}
-							<span class="release-tag">${release.prerelease ? 'Pre-release' : 'Latest'}</span>
+							<span class="release-tag">${release.prerelease ? t('github.preRelease') : t('github.latest')}</span>
 						</h1>
 					</div>
 					<div class="content">
@@ -319,18 +324,18 @@ function showChangelogWebview(release: GitHubRelease, version: string): void {
 								<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor">
 									<path d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v11.5a1.748 1.748 0 0 1-.874 1.515.75.75 0 0 1-.752-1.298.25.25 0 0 0 .126-.217V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM8.75 6.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM8 4.75A.75.75 0 0 1 7.25 4h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 8 4.75ZM8.75 10.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM8 8.75A.75.75 0 0 1 7.25 8h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 8 8.75Z"></path>
 								</svg>
-								Source code (zip)
+								${t('github.sourceCodeZip')}
 							</a>
 							<a href="${release.tarball_url}" class="download-button" target="_blank">
 								<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor">
 									<path d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v11.5a1.748 1.748 0 0 1-.874 1.515.75.75 0 0 1-.752-1.298.25.25 0 0 0 .126-.217V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM8.75 6.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM8 4.75A.75.75 0 0 1 7.25 4h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 8 4.75ZM8.75 10.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM8 8.75A.75.75 0 0 1 7.25 8h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 8 8.75Z"></path>
 								</svg>
-								Source code (tar.gz)
+								${t('github.sourceCodeTarGz')}
 							</a>
 						</div>
 					</div>
 					<div class="footer">
-						<a href="${release.html_url}" target="_blank">View full release on GitHub</a>
+						<a href="${release.html_url}" target="_blank">${t('github.viewFullRelease')}</a>
 					</div>
 				</div>
 			</body>
@@ -346,7 +351,7 @@ function showChangelogWebview(release: GitHubRelease, version: string): void {
 		
 		// If showing for a specific version, show an installation notification
 		if (version !== release.tag_name.replace('v', '')) {
-			vscode.window.showInformationMessage(`Cursor Stats ${version} has been installed`);
+			vscode.window.showInformationMessage(t('github.installedMessage', { version: version }));
 		}
 	} catch (error: any) {
 		log(`[GitHub] Error showing changelog webview: ${error.message}`, true);

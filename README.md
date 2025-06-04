@@ -10,13 +10,13 @@
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Dwtexe.cursor-stats.svg?style=flat-square&label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats) [![Rating](https://img.shields.io/visual-studio-marketplace/r/Dwtexe.cursor-stats.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
-
 </div>
 
 <details id="section-features">
 <summary style="cursor: pointer"><h2 style="display: inline">✨ Features</h2></summary>
 
 #### Core Features
+
 - 🚀 Real-time usage monitoring
 - 👥 Team usage tracking
 - 📊 Premium request analytics
@@ -27,6 +27,7 @@
 - 💳 Mid-month payment tracking
 
 #### Advanced Features
+
 - 🎨 Customizable status bar
 - 📈 Progress bar visualization
 - 🌍 Multi-currency support
@@ -37,6 +38,7 @@
 - 🔒 Secure token management
 
 #### 🔜 Upcoming Features
+
 - 📊 Session-based request tracking
 - 📈 Visual analytics dashboard
 - 🎯 Project-specific monitoring
@@ -83,8 +85,8 @@
 | `cursorStats.excludeWeekends` | Exclude weekends from period progress and daily calculations | `false` |
 | `cursorStats.showDailyRemaining` | Show estimated fast requests remaining per day | `false` |
 | `cursorStats.spendingAlertThreshold` | Spending alert threshold (in your selected currency) | `1` |
-</details>
 
+</details>
 
 <details id="section-commands">
 <summary style="cursor: pointer"><h2 style="display: inline">🔧 Commands</h2></summary>
@@ -103,6 +105,7 @@
 <summary style="cursor: pointer"><h2 style="display: inline">🚀 Installation</h2></summary>
   
 #### VS Code Marketplace
+
 1. Open VS Code
 2. Press `Ctrl+P` / `⌘P`
 3. Run `ext install Dwtexe.cursor-stats`
@@ -110,6 +113,7 @@
 Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Dwtexe.cursor-stats)
 
 #### Manual Installation
+
 1. Download the latest `.vsix` from [Releases](https://github.com/Dwtexe/cursor-stats/releases)
 2. Open Cursor
 3. Press `Ctrl+Shift+P` / `⌘⇧P`
@@ -130,36 +134,6 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 - 🐛 [Report Issues](https://github.com/Dwtexe/cursor-stats/issues)
 - 💡 [Feature Requests](https://github.com/Dwtexe/cursor-stats/issues/new)
 
-## 🌍 Language Support
-
-Cursor Stats now supports multiple languages for the interface:
-
-### Available Languages
-- **English** (Default)
-- **中文** (Chinese)
-- **한국어** (Korean)
-
-### How to Change Language
-
-1. **Via Command Palette:**
-   - Press `Ctrl+Shift+P` (Windows/Linux) or `⌘⇧P` (Mac)
-   - Type "Cursor Stats: Select Language"
-   - Choose your preferred language
-
-2. **Via Settings:**
-   - Open VS Code Settings (`Ctrl+,` or `⌘,`)
-   - Search for "cursor stats language"
-   - Select from the dropdown: `en`, `zh`, or `ko`
-
-### Features in Multiple Languages
-- Status bar text and tooltips
-- Notification messages
-- Command titles
-- Settings descriptions
-- Error messages
-
-The interface will update automatically when you change the language setting.
-
 ## 💝 Donations
 
 If you find this extension helpful, consider supporting its development:
@@ -168,17 +142,23 @@ If you find this extension helpful, consider supporting its development:
 <summary>Click to view donation options</summary>
 
 ### Buy Me A Coffee
+
 <a href="https://www.buymeacoffee.com/dwtexe" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
 
 ### Binance
+
 - **ID**: `39070620`
 
 ### USDT
+
 - **Multi-Chain** (BEP20/ERC20/Arbitrum One/Optimism):
+
   ```
   0x88bfb527158387f8f74c5a96a0468615d06f3899
   ```
+
 - **TRC20**:
+
   ```
   TPTnapCanmrsfcMVAyn4YiC6dLP8Wx1Czb
   ```

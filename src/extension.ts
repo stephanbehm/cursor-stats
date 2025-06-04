@@ -48,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
         // Initialize i18n system
         initializeI18n();
         
-        // 设置语言变更回调
+        // Setting up language change callbacks
         setOnLanguageChangeCallback((_newLanguage: string, languageLabel: string) => {
             const message = t('commands.languageChanged', { language: languageLabel });
             vscode.window.showInformationMessage(message);

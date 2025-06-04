@@ -29,6 +29,24 @@
     "currency": "통화",
     "extensionSettings": "확장 설정",
     "refresh": "새로고침",
+    "noTokenFound": "Cursor Stats: 토큰을 찾을 수 없습니다",
+    "couldNotRetrieveToken": "⚠️ 데이터베이스에서 Cursor 토큰을 검색할 수 없습니다",
+    "requestsUsed": "요청 사용됨",
+    "fastRequestsPeriod": "빠른 요청 기간",
+    "usageBasedPeriod": "사용량 기반 기간",
+    "currentUsage": "현재 사용량",
+    "total": "합계",
+    "unpaid": "미납",
+    "discounted": "할인됨",
+    "unknownModel": "알 수 없는 모델",
+    "unknownItem": "알 수 없는 항목",
+    "totalCost": "총 비용",
+    "noUsageDataAvailable": "사용 데이터 없음",
+    "usage": "사용량",
+    "weekday": "평일",
+    "weekdays": "평일",
+    "month": "월",
+    "apiUnavailable": "Cursor API를 사용할 수 없습니다 (다시 시도까지 {countdown})",
     "months": {
       "january": "1월",
       "february": "2월", 
@@ -59,7 +77,10 @@
     "currentTotalCost": "현재 총 사용 비용은 {amount}입니다.",
     "payInvoiceToContinue": "사용량 기반 가격을 계속 사용하려면 청구서를 결제해 주세요.",
     "openBillingPage": "결제 페이지 열기",
-    "dismiss": "닫기"
+    "dismiss": "닫기",
+    "unknownModelsDetected": "새롭거나 처리되지 않은 Cursor 모델 용어가 감지되었습니다: \"{models}\". 새로운 모델인 것 같으면 리포트를 생성하여 GitHub에 제출해 주세요",
+    "usageBasedSpendingThreshold": "사용량 기반 지출이 ${limit} 한도의 {percentage}%에 도달했습니다",
+    "failedToOpenSettings": "Cursor Stats 설정을 열지 못했습니다. VS Code 설정을 수동으로 열어보세요"
   },
   "commands": {
     "updateToken": "Cursor Stats: 세션 토큰 업데이트",
@@ -72,7 +93,14 @@
     "setMonthlyLimit": "월간 제한 설정",
     "disableUsageBased": "사용량 기반 가격 비활성화",
     "selectLanguage": "Cursor Stats: 언어 선택",
-    "languageChanged": "언어가 {language}로 변경되었습니다. 인터페이스가 자동으로 업데이트됩니다."
+    "languageChanged": "언어가 {language}로 변경되었습니다. 인터페이스가 자동으로 업데이트됩니다",
+    "openGitHubIssues": "Cursor Stats: GitHub 이슈 열기",
+    "createReportProgress": "Cursor Stats 보고서 생성 중",
+    "gatheringData": "데이터 수집 중...",
+    "completed": "완료!",
+    "reportCreatedSuccessfully": "보고서가 성공적으로 생성되었습니다!\n{fileName}",
+    "openFile": "파일 열기",
+    "openFolder": "폴더 열기"
   },
   "settings": {
     "enableUsageBasedPricing": "사용량 기반 가격 활성화",
@@ -94,7 +122,9 @@
     "databaseError": "데이터베이스 액세스 오류",
     "networkError": "네트워크 연결 오류",
     "updateFailed": "통계 업데이트 실패",
-    "unknownError": "알 수 없는 오류가 발생했습니다"
+    "unknownError": "알 수 없는 오류가 발생했습니다",
+    "failedToCreateReport": "보고서 생성 실패. 자세한 내용은 로그를 확인하세요",
+    "errorCreatingReport": "보고서 생성 오류: {error}"
   },
   "time": {
     "day": "일",
@@ -150,5 +180,29 @@
     "qar": "카타르 리얄",
     "kwd": "쿠웨이트 디나르",
     "mad": "모로코 디르함"
+  },
+  "progressBar": {
+    "errorParsingDates": "날짜 구문 분석 오류",
+    "dailyRemainingLimitReached": "📊 일일 남은: 0 요청/일 (제한 도달)",
+    "dailyRemainingWeekend": "📊 일일 남은: 주말 - 계산은 월요일에 재개됩니다",
+    "dailyRemainingPeriodEnding": "📊 일일 남은: 기간이 거의 종료됩니다",
+    "dailyRemainingCalculation": "📊 일일 남은: {requestsPerDay} 요청/{dayType}\n    ({remainingRequests} 요청 ÷ {remainingDays} {dayTypePlural})"
+  },
+  "api": {
+    "midMonthPayment": "월중 결제",
+    "toolCalls": "툴 호출",
+    "fastPremium": "빠른 프리미엄",
+    "requestUnit": "req"
+  },
+  "github": {
+    "preRelease": "프리 릴리스",
+    "stableRelease": "정식 릴리스",
+    "latest": "최신",
+    "updateAvailable": "{releaseType} {releaseName} 사용 가능! 현재 버전은 {currentVersion}입니다",
+    "changesTitle": "{releaseType} {version} 변경사항",
+    "sourceCodeZip": "소스 코드 (zip)",
+    "sourceCodeTarGz": "소스 코드 (tar.gz)",
+    "viewFullRelease": "GitHub에서 전체 릴리스 보기",
+    "installedMessage": "Cursor Stats {version}이(가) 설치되었습니다"
   }
 } 

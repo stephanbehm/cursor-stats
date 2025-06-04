@@ -68,18 +68,18 @@ export async function checkAndNotifySpending(totalSpent: number) {
                 const nextHigherThresholdAmount = (multipleToConsider + 1) * spendingThreshold;
                 const formattedNextHigherThreshold = await convertAndFormatCurrency(nextHigherThresholdAmount);
                 
-                const message = `Your Cursor usage spending has reached ${formattedCurrentThreshold}`;
-                const detail = `Current total usage cost is ${formattedTotalSpent}. Next spending notification at ${formattedNextHigherThreshold}.`;
+                const message = t('notifications.spendingThresholdReached', { amount: formattedCurrentThreshold });
+                const detail = `${t('notifications.currentTotalCost', { amount: formattedTotalSpent })} ${t('notifications.nextNotificationAt', { amount: formattedNextHigherThreshold })}`;
 
                 // Show the notification
                 const notificationSelection = await vscode.window.showInformationMessage(
                     message,
                     { modal: false, detail },
-                    'Manage Limit',
-                    'Dismiss'
+                    t('notifications.manageLimitTitle'),
+                    t('notifications.dismiss')
                 );
 
-                if (notificationSelection === 'Manage Limit') {
+                if (notificationSelection === t('notifications.manageLimitTitle')) {
                     await vscode.commands.executeCommand('cursor-stats.setLimit');
                 }
 
@@ -109,12 +109,12 @@ export async function checkAndNotifyUnpaidInvoice(token: string) {
         log('[Notifications] Checking for unpaid mid-month invoice notification.');
 
         const notification = await vscode.window.showWarningMessage(
-            '⚠️ You have an unpaid mid-month invoice. Please pay it to continue using usage-based pricing.',
-            'Open Billing Page',
-            'Dismiss'
+            t('notifications.unpaidInvoice'),
+            t('notifications.openBillingPage'),
+            t('notifications.dismiss')
         );
 
-        if (notification === 'Open Billing Page') {
+        if (notification === t('notifications.openBillingPage')) {
             try {
                 const { getStripeSessionUrl } = await import('../services/api'); // Lazy import
                 const stripeUrl = await getStripeSessionUrl(token);
@@ -168,28 +168,28 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
             
             let message, detail;
             if (type === 'premium') {
-                message = `Premium request usage has reached ${percentage.toFixed(1)}%`;
                 if (percentage > 100) {
-                    message = `Premium request usage has exceeded limit (${percentage.toFixed(1)}%)`;
-                    detail = 'Enable usage-based pricing to continue using premium models.';
+                    message = t('notifications.usageExceededLimit', { percentage: percentage.toFixed(1) });
+                    detail = t('notifications.enableUsageBasedDetail');
                 } else {
-                    detail = 'Click View Settings to manage your usage limits.';
+                    message = t('notifications.usageThresholdReached', { percentage: percentage.toFixed(1) });
+                    detail = t('notifications.viewSettingsDetail');
                 }
             } else {
                 // Only show usage-based notifications if premium is exhausted
-                message = `Usage-based spending has reached ${percentage.toFixed(1)}% of your $${limit} limit`;
-                detail = 'Click Manage Limit to adjust your usage-based pricing settings.';
+                message = t('notifications.usageBasedSpendingThreshold', { percentage: percentage.toFixed(1), limit: limit || 0 });
+                detail = t('notifications.manageLimitDetail');
             }
 
             // Show the notification
             const notification = await vscode.window.showWarningMessage(
                 message,
                 { modal: false, detail },
-                type === 'premium' && percentage > 100 ? 'Enable Usage-Based' : type === 'premium' ? 'View Settings' : 'Manage Limit',
-                'Dismiss'
+                type === 'premium' && percentage > 100 ? t('notifications.enableUsageBasedTitle') : type === 'premium' ? t('notifications.viewSettingsTitle') : t('notifications.manageLimitTitle'),
+                t('notifications.dismiss')
             );
 
-            if (notification === 'View Settings') {
+            if (notification === t('notifications.viewSettingsTitle')) {
                 try {
                     await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:Dwtexe.cursor-stats');
                 } catch (error) {
@@ -200,10 +200,10 @@ export async function checkAndNotifyUsage(usageInfo: UsageInfo) {
                         await vscode.commands.executeCommand('workbench.action.search.action.replaceAll', '@ext:Dwtexe.cursor-stats');
                     } catch (fallbackError) {
                         log('[Notifications] Failed to open settings with fallback method', true);
-                        vscode.window.showErrorMessage('Failed to open Cursor Stats settings. Please try opening VS Code settings manually.');
+                        vscode.window.showErrorMessage(t('notifications.failedToOpenSettings'));
                     }
                 }
-            } else if (notification === 'Manage Limit' || notification === 'Enable Usage-Based') {
+            } else if (notification === t('notifications.manageLimitTitle') || notification === t('notifications.enableUsageBasedTitle')) {
                 await vscode.commands.executeCommand('cursor-stats.setLimit');
             }
 

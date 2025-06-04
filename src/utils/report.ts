@@ -9,6 +9,7 @@ import { getCursorTokenFromDB } from '../services/database';
 import { log, getLogHistory } from './logger';
 import { getTeamUsage, checkTeamMembership } from '../services/team';
 import { getExtensionContext } from '../extension';
+import { t } from './i18n';
 
 /**
  * Generates a comprehensive report of the extension's data and API responses
@@ -230,15 +231,15 @@ export const createReportCommand = vscode.commands.registerCommand('cursor-stats
     await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
-            title: 'Creating Cursor Stats Report',
+            title: t('commands.createReportProgress'),
             cancellable: false
         },
         async (progress) => {
-            progress.report({ increment: 0, message: 'Gathering data...' });
+            progress.report({ increment: 0, message: t('commands.gatheringData') });
             
             try {
                 const result = await generateReport();
-                progress.report({ increment: 100, message: 'Completed!' });
+                progress.report({ increment: 100, message: t('commands.completed') });
                 
                 if (result.success) {
                     const folderPath = vscode.Uri.file(result.reportPath).with({ fragment: 'report' });
@@ -246,26 +247,26 @@ export const createReportCommand = vscode.commands.registerCommand('cursor-stats
                     const directoryPath = result.reportPath.substring(0, result.reportPath.length - fileName.length);
                     
                     const openOption = await vscode.window.showInformationMessage(
-                        `Report created successfully!\n${fileName}`,
-                        'Open File',
-                        'Open Folder',
-                        'Open GitHub Issues'
+                        t('commands.reportCreatedSuccessfully', { fileName }),
+                        t('commands.openFile'),
+                        t('commands.openFolder'),
+                        t('commands.openGitHubIssues')
                     );
                     
-                    if (openOption === 'Open File') {
+                    if (openOption === t('commands.openFile')) {
                         const fileUri = vscode.Uri.file(result.reportPath);
                         await vscode.commands.executeCommand('vscode.open', fileUri);
-                    } else if (openOption === 'Open Folder') {
+                    } else if (openOption === t('commands.openFolder')) {
                         const folderUri = vscode.Uri.file(directoryPath);
                         await vscode.commands.executeCommand('revealFileInOS', folderUri);
-                    } else if (openOption === 'Open GitHub Issues') {
+                    } else if (openOption === t('commands.openGitHubIssues')) {
                         await vscode.env.openExternal(vscode.Uri.parse('https://github.com/Dwtexe/cursor-stats/issues/new'));
                     }
                 } else {
-                    vscode.window.showErrorMessage('Failed to create report. Check logs for details.');
+                    vscode.window.showErrorMessage(t('errors.failedToCreateReport'));
                 }
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Error creating report: ${error.message}`);
+                vscode.window.showErrorMessage(t('errors.errorCreatingReport', { error: error.message }));
                 log('[Report] Error: ' + error.message, true);
             }
         }

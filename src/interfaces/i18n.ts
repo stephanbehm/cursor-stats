@@ -31,6 +31,33 @@ export interface LanguagePack {
       currency: string;
       extensionSettings: string;
       refresh: string;
+      
+      // New keys for updateStats
+      noTokenFound: string;
+      couldNotRetrieveToken: string;
+      requestsUsed: string;
+      fastRequestsPeriod: string;
+      usageBasedPeriod: string;
+      currentUsage: string;
+      total: string;
+      unpaid: string;
+      discounted: string;
+      unknownModel: string;
+      unknownItem: string;
+      totalCost: string;
+      noUsageDataAvailable: string;
+      
+      // New keys for progressBars
+      usage: string;
+      weekday: string;
+      weekdays: string;
+      
+      // Additional status bar keys
+      month: string;
+      
+      // New keys for cooldown
+      apiUnavailable: string;
+      
       months: {
         january: string;
         february: string;
@@ -64,6 +91,9 @@ export interface LanguagePack {
       payInvoiceToContinue: string;
       openBillingPage: string;
       dismiss: string;
+      unknownModelsDetected: string;
+      usageBasedSpendingThreshold: string;
+      failedToOpenSettings: string;
     };
   
     // Command related
@@ -79,6 +109,15 @@ export interface LanguagePack {
       disableUsageBased: string;
       selectLanguage: string;
       languageChanged: string;
+      openGitHubIssues: string;
+      
+      // Report generation related
+      createReportProgress: string;
+      gatheringData: string;
+      completed: string;
+      reportCreatedSuccessfully: string;
+      openFile: string;
+      openFolder: string;
     };
   
     // Settings related
@@ -105,6 +144,10 @@ export interface LanguagePack {
       networkError: string;
       updateFailed: string;
       unknownError: string;
+      
+      // Report generation errors
+      failedToCreateReport: string;
+      errorCreatingReport: string;
     };
   
     // Time related
@@ -129,5 +172,35 @@ export interface LanguagePack {
       gbp: string;
       jpy: string;
       cny: string;
+    };
+  
+    // Progress bar related
+    progressBar: {
+      errorParsingDates: string;
+      dailyRemainingLimitReached: string;
+      dailyRemainingWeekend: string;
+      dailyRemainingPeriodEnding: string;
+      dailyRemainingCalculation: string;
+    };
+
+    // API related
+    api: {
+      midMonthPayment: string;
+      toolCalls: string;
+      fastPremium: string;
+      requestUnit: string;
+    };
+
+    // GitHub related
+    github: {
+      preRelease: string;
+      stableRelease: string;
+      latest: string;
+      updateAvailable: string;
+      changesTitle: string;
+      sourceCodeZip: string;
+      sourceCodeTarGz: string;
+      viewFullRelease: string;
+      installedMessage: string;
     };
   }

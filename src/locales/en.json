@@ -24,11 +24,29 @@
     "errorCheckingStatus": "Error checking usage-based pricing status",
     "unableToCheckStatus": "Unable to check usage-based pricing status",
     "unpaidAmount": "Unpaid: {amount}",
-    "youHavePaid": "You have paid {amount} of this cost already",
+    "youHavePaid": "ℹ️ You have paid **{amount}** of this cost already",
     "accountSettings": "Account Settings",
     "currency": "Currency",
     "extensionSettings": "Extension Settings",
     "refresh": "Refresh",
+    "noTokenFound": "Cursor Stats: No token found",
+    "couldNotRetrieveToken": "⚠️ Could not retrieve Cursor token from database",
+    "requestsUsed": "requests used",
+    "fastRequestsPeriod": "Fast Requests Period",
+    "usageBasedPeriod": "Usage Based Period",
+    "currentUsage": "Current Usage",
+    "total": "Total",
+    "unpaid": "Unpaid",
+    "discounted": "discounted",
+    "unknownModel": "unknown-model",
+    "unknownItem": "Unknown Item",
+    "totalCost": "Total Cost",
+    "noUsageDataAvailable": "No usage data available",
+    "usage": "Usage",
+    "weekday": "weekday", 
+    "weekdays": "weekdays",
+    "month": "Month",
+    "apiUnavailable": "Cursor API Unavailable (Retrying in {countdown})",
     "months": {
       "january": "January",
       "february": "February", 
@@ -43,6 +61,30 @@
       "november": "November",
       "december": "December"
     }
+  },
+  "progressBar": {
+    "errorParsingDates": "Error parsing dates",
+    "dailyRemainingLimitReached": "📊 Daily Remaining: 0 requests/day (limit reached)",
+    "dailyRemainingWeekend": "📊 Daily Remaining: Weekend - calculations resume Monday",
+    "dailyRemainingPeriodEnding": "📊 Daily Remaining: Period ending soon",
+    "dailyRemainingCalculation": "📊 Daily Remaining: {requestsPerDay} requests/{dayType}\n    ({remainingRequests} requests ÷ {remainingDays} {dayTypePlural})"
+  },
+  "api": {
+    "midMonthPayment": "Mid-month payment",
+    "toolCalls": "tool calls",
+    "fastPremium": "fast premium",
+    "requestUnit": "req"
+  },
+  "github": {
+    "preRelease": "Pre-release",
+    "stableRelease": "Stable release",
+    "latest": "Latest",
+    "updateAvailable": "{releaseType} {releaseName} is available! You are on {currentVersion}",
+    "changesTitle": "{releaseType} {version} Changes",
+    "sourceCodeZip": "Source code (zip)",
+    "sourceCodeTarGz": "Source code (tar.gz)",
+    "viewFullRelease": "View full release on GitHub",
+    "installedMessage": "Cursor Stats {version} has been installed"
   },
   "notifications": {
     "usageThresholdReached": "Premium request usage has reached {percentage}%",
@@ -59,7 +101,10 @@
     "currentTotalCost": "Current total usage cost is {amount}.",
     "payInvoiceToContinue": "Please pay your invoice to continue using usage-based pricing.",
     "openBillingPage": "Open Billing Page",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "unknownModelsDetected": "New or unhandled Cursor model terms detected: \"{models}\". If these seem like new models, please create a report and submit it on GitHub.",
+    "usageBasedSpendingThreshold": "Usage-based spending has reached {percentage}% of your ${limit} limit",
+    "failedToOpenSettings": "Failed to open Cursor Stats settings. Please try opening VS Code settings manually."
   },
   "commands": {
     "updateToken": "Cursor Stats: Update Session Token",
@@ -72,7 +117,14 @@
     "setMonthlyLimit": "Set Monthly Limit",
     "disableUsageBased": "Disable Usage-Based Pricing",
     "selectLanguage": "Cursor Stats: Select Language",
-    "languageChanged": "Language changed to {language}. Interface will update automatically."
+    "languageChanged": "Language changed to {language}. Interface will update automatically.",
+    "openGitHubIssues": "Open GitHub Issues",
+    "createReportProgress": "Creating Cursor Stats Report",
+    "gatheringData": "Gathering data...",
+    "completed": "Completed!",
+    "reportCreatedSuccessfully": "Report created successfully!\n{fileName}",
+    "openFile": "Open File",
+    "openFolder": "Open Folder"
   },
   "settings": {
     "enableUsageBasedPricing": "Enable Usage-Based Pricing",
@@ -94,7 +146,9 @@
     "databaseError": "Database access error",
     "networkError": "Network connection error",
     "updateFailed": "Failed to update statistics",
-    "unknownError": "An unknown error occurred"
+    "unknownError": "An unknown error occurred",
+    "failedToCreateReport": "Failed to create report. Check logs for details.",
+    "errorCreatingReport": "Error creating report: {error}"
   },
   "time": {
     "day": "day",
@@ -107,7 +161,7 @@
     "seconds": "seconds",
     "ago": "ago",
     "refreshing": "Refreshing...",
-    "lastUpdated": "Last updated"
+    "lastUpdated": "Last Updated"
   },
   "currency": {
     "usd": "US Dollar",

@@ -126,21 +126,23 @@ function updateCurrentLanguage(): void {
 
 
 /**
- * Get translated text
+ * Get translated text with fallback mechanism
  * @param key Translation key (supports nesting, e.g., 'statusBar.premiumFastRequests')
  * @param params Replacement parameters
  */
 export function t(key: string, params?: { [key: string]: string | number }): string {
-  const keys = key.split('.');
-  let value: any = currentLanguagePack;
+  let value = getTranslationValue(key, currentLanguagePack);
   
-  for (const k of keys) {
-    if (value && typeof value === 'object' && k in value) {
-      value = value[k];
-    } else {
-      log(`[I18n] Translation key not found: ${key}`, true);
-      return key; // Return original key as default value
-    }
+  // If translation not found in current language and current language is not English, try English fallback
+  if (value === null && currentLanguage !== 'en' && languagePacks['en']) {
+    log(`[I18n] Translation key '${key}' not found in ${currentLanguage}, falling back to English`);
+    value = getTranslationValue(key, languagePacks['en']);
+  }
+  
+  // If still no translation found, return the key itself
+  if (value === null) {
+    log(`[I18n] Translation key not found in any language pack: ${key}`, true);
+    return key;
   }
   
   if (typeof value !== 'string') {
@@ -153,6 +155,31 @@ export function t(key: string, params?: { [key: string]: string | number }): str
     Object.keys(params).forEach(param => {
       value = value.replace(new RegExp(`{${param}}`, 'g'), params[param].toString());
     });
+  }
+  
+  return value;
+}
+
+/**
+ * Helper function to get translation value from a language pack
+ * @param key Translation key
+ * @param languagePack Language pack to search in
+ * @returns Translation value or null if not found
+ */
+function getTranslationValue(key: string, languagePack: LanguagePack): any {
+  if (!languagePack) {
+    return null;
+  }
+  
+  const keys = key.split('.');
+  let value: any = languagePack;
+  
+  for (const k of keys) {
+    if (value && typeof value === 'object' && k in value) {
+      value = value[k];
+    } else {
+      return null; // Key not found
+    }
   }
   
   return value;

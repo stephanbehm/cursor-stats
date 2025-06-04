@@ -2,6 +2,7 @@ import { getRefreshIntervalMs } from '../extension';
 import { updateStats } from '../utils/updateStats';
 import { log } from './logger';
 import * as vscode from 'vscode';
+import { t } from './i18n';
 
 // Private state
 let _countdownInterval: NodeJS.Timeout | null = null;
@@ -92,7 +93,7 @@ export function startCountdownDisplay() {
         }
 
         // Update status bar with countdown
-        _statusBarItem.text = `$(warning) Cursor API Unavailable (Retrying in ${formatCountdown(remaining)})`;
+        _statusBarItem.text = `$(warning) ${t('statusBar.apiUnavailable', { countdown: formatCountdown(remaining) })}`;
         _statusBarItem.show();
         log(`[Cooldown] Updated countdown: ${formatCountdown(remaining)}`);
     };

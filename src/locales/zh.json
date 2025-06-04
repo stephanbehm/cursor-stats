@@ -29,6 +29,24 @@
     "currency": "货币",
     "extensionSettings": "扩展设置",
     "refresh": "刷新",
+    "noTokenFound": "Cursor Stats: 未找到令牌",
+    "couldNotRetrieveToken": "⚠️ 无法从数据库检索 Cursor 令牌",
+    "requestsUsed": "已使用请求",
+    "fastRequestsPeriod": "快速请求周期",
+    "usageBasedPeriod": "使用量计费周期",
+    "currentUsage": "当前使用量",
+    "total": "总计",
+    "unpaid": "未付",
+    "discounted": "已折扣",
+    "unknownModel": "未知模型",
+    "unknownItem": "未知项",
+    "totalCost": "总费用",
+    "noUsageDataAvailable": "无可用使用数据",
+    "usage": "使用量",
+    "weekday": "工作日",
+    "weekdays": "工作日",
+    "month": "月",
+    "apiUnavailable": "Cursor API 不可用（重试倒计时 {countdown}）",
     "months": {
       "january": "1月",
       "february": "2月", 
@@ -59,7 +77,10 @@
     "currentTotalCost": "当前总使用成本为 {amount}。",
     "payInvoiceToContinue": "请支付您的账单以继续使用基于使用量的定价。",
     "openBillingPage": "打开账单页面",
-    "dismiss": "关闭"
+    "dismiss": "关闭",
+    "unknownModelsDetected": "检测到新的或未处理的 Cursor 模型术语：\"{models}\"。如果这些是新模型，请创建报告并提交到 GitHub。",
+    "usageBasedSpendingThreshold": "基于使用量的支出已达到您的 ${limit} 限额的 {percentage}%",
+    "failedToOpenSettings": "无法打开 Cursor Stats 设置。请尝试手动打开 VS Code 设置。"
   },
   "commands": {
     "updateToken": "Cursor Stats: 更新会话令牌",
@@ -72,7 +93,14 @@
     "setMonthlyLimit": "设置月度限制",
     "disableUsageBased": "禁用使用量计费",
     "selectLanguage": "Cursor Stats: 选择语言",
-    "languageChanged": "语言已切换为{language}，界面将自动更新。"
+    "languageChanged": "语言已切换为{language}，界面将自动更新。",
+    "openGitHubIssues": "Cursor Stats: 打开 GitHub 问题",
+    "createReportProgress": "正在创建 Cursor Stats 报告",
+    "gatheringData": "正在收集数据...",
+    "completed": "完成！",
+    "reportCreatedSuccessfully": "报告已成功创建！\n{fileName}",
+    "openFile": "打开文件",
+    "openFolder": "打开文件夹"
   },
   "settings": {
     "enableUsageBasedPricing": "启用使用量计费",
@@ -94,7 +122,9 @@
     "databaseError": "数据库访问错误",
     "networkError": "网络连接错误",
     "updateFailed": "更新统计失败",
-    "unknownError": "发生未知错误"
+    "unknownError": "发生未知错误",
+    "failedToCreateReport": "报告创建失败。请检查日志以获取详细信息。",
+    "errorCreatingReport": "创建报告时出错：{error}"
   },
   "time": {
     "day": "天",
@@ -150,5 +180,29 @@
     "qar": "卡塔尔里亚尔",
     "kwd": "科威特第纳尔",
     "mad": "摩洛哥迪拉姆"
+  },
+  "progressBar": {
+    "errorParsingDates": "解析日期错误",
+    "dailyRemainingLimitReached": "📊 每日剩余：0 请求/天（已达到限制）",
+    "dailyRemainingWeekend": "📊 每日剩余：周末 - 计算将在周一恢复",
+    "dailyRemainingPeriodEnding": "📊 每日剩余：周期即将结束",
+    "dailyRemainingCalculation": "📊 每日剩余：{requestsPerDay} 请求/{dayType}\n    ({remainingRequests} 请求 ÷ {remainingDays} {dayTypePlural})"
+  },
+  "api": {
+    "midMonthPayment": "月中支付",
+    "toolCalls": "工具调用",
+    "fastPremium": "快速高级",
+    "requestUnit": "req"
+  },
+  "github": {
+    "preRelease": "预发布",
+    "stableRelease": "稳定发布",
+    "latest": "最新",
+    "updateAvailable": "{releaseType} {releaseName} 可用！您当前的版本是 {currentVersion}",
+    "changesTitle": "{releaseType} {version} 更新内容",
+    "sourceCodeZip": "源码 (zip)",
+    "sourceCodeTarGz": "源码 (tar.gz)",
+    "viewFullRelease": "在 GitHub 上查看完整发布",
+    "installedMessage": "Cursor Stats {version} 已安装"
   }
 } 

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ProgressBarSettings } from '../interfaces/types';
+import { t } from './i18n';
 
 // Emojis for progress bar representation
 const PROGRESS_EMPTY = '⬜';
@@ -77,7 +78,7 @@ export function getProgressBarSettings(): ProgressBarSettings {
 export function createPeriodProgressBar(
   startDate: string,
   endDate?: string,
-  label: string = 'Period'
+  label: string = t('statusBar.period')
 ): string {
   if (!shouldShowProgressBars()) {
     return '';
@@ -163,17 +164,18 @@ export function createPeriodProgressBar(
   } catch (error) {
     // If date parsing fails, log error and return empty string
     console.error(`Error creating period progress bar: ${error}`);
-    return `${label}: Error parsing dates`;
+    return `${label}: ${t('progressBar.errorParsingDates')}`;
   }
 }
 
 /**
  * Convert month name to month number (0-11)
- * @param monthName Month name (e.g., "January", "Jan")
+ * @param monthName Month name (e.g., "January", "Jan", "1월")
  * @returns Month number (0-11)
  */
 export function getMonthNumber(monthName: string): number {
     const months: {[key: string]: number} = {
+        // English month names
         'january': 0, 'jan': 0,
         'february': 1, 'feb': 1,
         'march': 2, 'mar': 2,
@@ -188,6 +190,18 @@ export function getMonthNumber(monthName: string): number {
         'december': 11, 'dec': 11
     };
     
+    // Add translated month names
+    const monthKeys = [
+        'january', 'february', 'march', 'april',
+        'may', 'june', 'july', 'august',
+        'september', 'october', 'november', 'december'
+    ];
+    
+    for (let i = 0; i < 12; i++) {
+        const translatedName = t(`statusBar.months.${monthKeys[i]}`);
+        months[translatedName.toLowerCase()] = i;
+    }
+    
     return months[monthName.toLowerCase()] || 0;
 }
 
@@ -198,7 +212,7 @@ export function getMonthNumber(monthName: string): number {
  * @param label Label for the progress bar
  * @returns Formatted progress bar with label and percentage
  */
-export function createUsageProgressBar(current: number, limit: number, label: string = 'Usage'): string {
+export function createUsageProgressBar(current: number, limit: number, label: string = t('statusBar.usage')): string {
     if (!shouldShowProgressBars()) {
         return '';
     }
@@ -308,11 +322,11 @@ export function calculateDailyRemaining(
   const remainingRequests = limitRequests - currentRequests;
 
   if (remainingRequests <= 0) {
-    return '📊 Daily Remaining: 0 requests/day (limit reached)';
+    return t('progressBar.dailyRemainingLimitReached');
   }
 
   if (excludeWeekends && isWeekend()) {
-    return '📊 Daily Remaining: Weekend - calculations resume Monday';
+    return t('progressBar.dailyRemainingWeekend');
   }
 
   let remainingDays: number;
@@ -331,12 +345,18 @@ export function calculateDailyRemaining(
   }
 
   if (remainingDays <= 0) {
-    return '📊 Daily Remaining: Period ending soon';
+    return t('progressBar.dailyRemainingPeriodEnding');
   }
 
   const requestsPerDay = Math.ceil(remainingRequests / remainingDays);
-  const dayType = excludeWeekends ? 'weekday' : 'day';
-  const dayTypePlural = excludeWeekends ? 'weekdays' : 'days';
+  const dayType = excludeWeekends ? t('statusBar.weekday') : t('time.day');
+  const dayTypePlural = excludeWeekends ? t('statusBar.weekdays') : t('time.days');
 
-  return `📊 Daily Remaining: ${requestsPerDay} requests/${dayType}\n    (${remainingRequests} requests ÷ ${remainingDays} ${dayTypePlural})`;
+  return t('progressBar.dailyRemainingCalculation', {
+    requestsPerDay,
+    dayType,
+    remainingRequests,
+    remainingDays,
+    dayTypePlural
+  });
 }

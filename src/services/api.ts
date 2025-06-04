@@ -3,6 +3,7 @@ import { CursorStats, UsageLimitResponse, ExtendedAxiosError, UsageItem, CursorU
 import { log } from '../utils/logger';
 import { checkTeamMembership, getTeamUsage, extractUserUsage } from './team';
 import { getExtensionContext } from '../extension';
+import { t } from '../utils/i18n';
 import * as fs from 'fs';
 
 export async function getCurrentUsageLimit(token: string): Promise<UsageLimitResponse> {
@@ -168,7 +169,7 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                     log(`[API] Added mid-month payment of $${(Math.abs(item.cents) / 100).toFixed(2)}, total now: $${midMonthPayment.toFixed(2)}`);
                     // Add a special line for mid-month payment that statusBar.ts can parse
                     usageItems.push({
-                        calculation: `Mid-month payment: $${midMonthPayment.toFixed(2)}`,
+                        calculation: `${t('api.midMonthPayment')}: $${midMonthPayment.toFixed(2)}`,
                         totalDollars: `-$${midMonthPayment.toFixed(2)}`,
                         description: item.description
                     });
@@ -202,7 +203,7 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                         const specificModelMatch = item.description.match(genericModelPattern);
 
                         if (item.description.includes("tool calls")) {
-                            parsedModelName = "tool calls";
+                            parsedModelName = t('api.toolCalls');
                             isToolCall = true;
                         } else if (specificModelMatch) {
                             // Extract the model name (group 1), which excludes the "discounted" prefix
@@ -212,16 +213,16 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                             if (extraFastModelMatch && extraFastModelMatch[1]) {
                                 parsedModelName = extraFastModelMatch[1]; // e.g., Haiku
                             } else {
-                                parsedModelName = "fast premium";
+                                parsedModelName = t('api.fastPremium');
                             }
                         } else {
                             // Fallback for unknown model structure
-                            parsedModelName = "unknown-model"; // Default to unknown-model
+                            parsedModelName = t('statusBar.unknownModel'); // Default to unknown-model
                             log(`[API] Could not determine specific model for (original format): "${item.description}". Using "${parsedModelName}".`);
                         }
                     } else {
                         log('[API] Could not extract request count or model info from: ' + item.description);
-                        parsedModelName = "unknown-model"; // Ensure it's set for items we can't parse fully
+                        parsedModelName = t('statusBar.unknownModel'); // Ensure it's set for items we can't parse fully
                         // Try to get at least a request count if possible, even if model is unknown
                         const fallbackCountMatch = item.description.match(/^(\d+)/);
                         if (fallbackCountMatch) {
@@ -246,7 +247,7 @@ async function fetchMonthData(token: string, month: number, year: number): Promi
                 
                 const isTotallingItem = !!tokenBasedMatch; 
                 const tilde = isTotallingItem ? "~" : "&nbsp;&nbsp;";
-                const itemUnit = "req"; // Always use "req" as the unit
+                const itemUnit = t('api.requestUnit'); // Always use "req" as the unit
                 
                 // Simplified calculation string, model name is now separate
                 const calculationString = `**${paddedRequestCount}** ${itemUnit} @ **$${costPerRequestDollarsFormatted}${tilde}**`;
