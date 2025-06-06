@@ -52,17 +52,33 @@ function loadLanguagePackFromFile(languageCode: string): LanguagePack | null {
       return null;
     }
 
-    const localesPath = path.join(extensionPath, 'src', 'locales', `${languageCode}.json`);
+    // Try multiple paths to handle both development and production scenarios
+    const possiblePaths = [
+      // Production path (when extension is packaged)
+      path.join(extensionPath, 'src', 'locales', `${languageCode}.json`),
+      // Alternative production path
+      path.join(extensionPath, 'locales', `${languageCode}.json`),
+      // Development path
+      path.join(extensionPath, 'out', 'locales', `${languageCode}.json`)
+    ];
+
+    let localesPath: string | null = null;
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        localesPath = testPath;
+        break;
+      }
+    }
     
-    if (!fs.existsSync(localesPath)) {
-      log(`[I18n] Language file not found: ${localesPath}`, true);
+    if (!localesPath) {
+      log(`[I18n] Language file not found in any of these paths:`, possiblePaths, true);
       return null;
     }
 
     const fileContent = fs.readFileSync(localesPath, 'utf8');
     const languagePack = JSON.parse(fileContent) as LanguagePack;
     
-    log(`[I18n] Loaded language pack for: ${languageCode}`);
+    log(`[I18n] Loaded language pack for: ${languageCode} from ${localesPath}`);
     return languagePack;
   } catch (error) {
     log(`[I18n] Error loading language pack for ${languageCode}: ${error instanceof Error ? error.message : String(error)}`, true);
