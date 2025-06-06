@@ -107,7 +107,6 @@
     "failedToOpenSettings": "Failed to open Cursor Stats settings. Please try opening VS Code settings manually."
   },
   "commands": {
-    "updateToken": "Cursor Stats: Update Session Token",
     "refreshStats": "Cursor Stats: Refresh Statistics",
     "openSettings": "Cursor Stats: Open Settings",
     "setLimit": "Cursor Stats: Usage Based Pricing Settings",

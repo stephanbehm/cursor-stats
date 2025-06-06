@@ -2,6 +2,26 @@
 
 All notable changes to the "cursor-stats" extension will be documented in this file.
 
+## [1.1.4] - 2025-06-06
+
+### Added
+- 🌍 **Internationalization (i18n) Support**: Extension interface now supports multiple languages
+  - English (Default)
+  - 中文 (Chinese) 
+  - 한국어 (Korean)
+- 🔧 **Language Selection**: New command "Cursor Stats: Select Language" for easy language switching
+
+### Changed
+- 🌐 All UI elements, notifications, and messages are now translatable
+- 📈 Status bar and tooltips adapt to selected language
+- 💰 Currency names are now localized based on selected language
+- 🔄 Automatic interface updates when language is changed
+
+### Fixed
+- 🐛 Fixed undefined requests handling in team usage extraction
+- 🎯 Improved usage-based pricing period calculations for active months
+- 🔧 Better error handling for localization edge cases
+
 ## Upcoming Features
 
 ### Planned

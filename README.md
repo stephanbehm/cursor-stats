@@ -73,18 +73,23 @@
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `cursorStats.enableLogging` | Enable detailed logging | `false` |
+| `cursorStats.enableLogging` | Enable detailed logging | `true` |
 | `cursorStats.enableStatusBarColors` | Toggle colored status bar | `true` |
+| `cursorStats.statusBarColorThresholds` | Customize status bar text color based on usage percentage | `Array of 14 color thresholds` |
 | `cursorStats.enableAlerts` | Enable usage alerts | `true` |
+| `cursorStats.usageAlertThresholds` | Percentage thresholds for usage alerts | `[10, 30, 50, 75, 90, 100]` |
 | `cursorStats.showTotalRequests` | Show sum of all requests instead of only fast requests | `false` |
-| `cursorStats.refreshInterval` | Update frequency (seconds) | `30` |
+| `cursorStats.refreshInterval` | Update frequency (seconds) | `60` |
+| `cursorStats.spendingAlertThreshold` | Spending alert threshold (in your selected currency) | `1` |
 | `cursorStats.currency` | Custom currency conversion | `USD` |
 | `cursorStats.showProgressBars` | Enable progress visualization | `false` |
 | `cursorStats.progressBarLength` | Progress bar length (for progress visualization) | `10` |
+| `cursorStats.progressBarWarningThreshold` | Percentage threshold for progress bar warning (yellow) | `50` |
+| `cursorStats.progressBarCriticalThreshold` | Percentage threshold for progress bar critical (red) | `75` |
 | `cursorStats.customDatabasePath` | Custom path to Cursor database | `""` |
 | `cursorStats.excludeWeekends` | Exclude weekends from period progress and daily calculations | `false` |
 | `cursorStats.showDailyRemaining` | Show estimated fast requests remaining per day | `false` |
-| `cursorStats.spendingAlertThreshold` | Spending alert threshold (in your selected currency) | `1` |
+| `cursorStats.language` | Language for extension interface and messages | `en` |
 
 </details>
 
@@ -97,6 +102,7 @@
 | `cursor-stats.openSettings` | Open extension settings |
 | `cursor-stats.setLimit` | Configure usage-based pricing settings |
 | `cursor-stats.selectCurrency` | Change display currency |
+| `cursor-stats.selectLanguage` | Select language for extension interface |
 | `cursor-stats.createReport` | Generate diagnostic report |
 
 </details>

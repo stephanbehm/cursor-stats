@@ -83,7 +83,6 @@
     "failedToOpenSettings": "无法打开 Cursor Stats 设置。请尝试手动打开 VS Code 设置。"
   },
   "commands": {
-    "updateToken": "Cursor Stats: 更新会话令牌",
     "refreshStats": "Cursor Stats: 刷新统计",
     "openSettings": "Cursor Stats: 打开设置",
     "setLimit": "Cursor Stats: 使用量计费设置",

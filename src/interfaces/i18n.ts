@@ -98,7 +98,6 @@ export interface LanguagePack {
   
     // Command related
     commands: {
-      updateToken: string;
       refreshStats: string;
       openSettings: string;
       setLimit: string;

@@ -83,7 +83,6 @@
     "failedToOpenSettings": "Cursor Stats 설정을 열지 못했습니다. VS Code 설정을 수동으로 열어보세요"
   },
   "commands": {
-    "updateToken": "Cursor Stats: 세션 토큰 업데이트",
     "refreshStats": "Cursor Stats: 통계 새로고침",
     "openSettings": "Cursor Stats: 설정 열기",
     "setLimit": "Cursor Stats: 사용량 기반 가격 설정",
