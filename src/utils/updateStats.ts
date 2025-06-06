@@ -1,13 +1,9 @@
 import { log } from './logger';
 import { getCursorTokenFromDB } from '../services/database';
-import { checkUsageBasedStatus, fetchCursorStats, getStripeSessionUrl } from '../services/api';
+import { checkUsageBasedStatus, fetchCursorStats } from '../services/api';
 import { checkAndNotifyUsage, checkAndNotifySpending, checkAndNotifyUnpaidInvoice } from '../handlers/notifications';
 import { 
-    startRefreshInterval, 
-    startCountdownDisplay, 
-    formatCountdown, 
-    COOLDOWN_DURATION_MS,
-    getRefreshInterval,
+    startRefreshInterval,
     getCooldownStartTime,
     getConsecutiveErrorCount,
     incrementConsecutiveErrorCount,

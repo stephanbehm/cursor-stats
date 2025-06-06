@@ -118,6 +118,28 @@ export interface LanguagePack {
       reportCreatedSuccessfully: string;
       openFile: string;
       openFolder: string;
+      
+      // New keys for extension.ts
+      enableUsageBasedOption: string;
+      enableUsageBasedDescription: string;
+      setMonthlyLimitOption: string;
+      setMonthlyLimitDescription: string;
+      disableUsageBasedOption: string;
+      disableUsageBasedDescription: string;
+      enterMonthlyLimit: string;
+      enterNewMonthlyLimit: string;
+      validNumberRequired: string;
+      usageBasedEnabledWithLimit: string;
+      usageBasedAlreadyEnabled: string;
+      limitUpdatedTo: string;
+      enableUsageBasedFirst: string;
+      usageBasedDisabled: string;
+      usageBasedAlreadyDisabled: string;
+      failedToManageLimit: string;
+      currentStatus: string;
+      selectCurrencyPrompt: string;
+      currentLanguagePrompt: string;
+      selectLanguagePrompt: string;
     };
   
     // Settings related

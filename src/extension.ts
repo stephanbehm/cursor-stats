@@ -136,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 } catch (fallbackError) {
                     log('[Command] Failed to open settings with fallback method', true);
                     // Show error message to user
-                    vscode.window.showErrorMessage('Failed to open Cursor Stats settings. Please try opening VS Code settings manually.');
+                    vscode.window.showErrorMessage(t('notifications.failedToOpenSettings'));
                 }
             }
         });
@@ -191,7 +191,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const setLimitCommand = vscode.commands.registerCommand('cursor-stats.setLimit', async () => {
             const token = await getCursorTokenFromDB();
             if (!token) {
-                vscode.window.showErrorMessage('Please sign in to Cursor first');
+                vscode.window.showErrorMessage(t('settings.signInRequired'));
                 return;
             }
 
@@ -201,22 +201,25 @@ export async function activate(context: vscode.ExtensionContext) {
                
                 const quickPick = await vscode.window.showQuickPick([
                     {
-                        label: '$(check) Enable Usage-Based Pricing',
-                        description: 'Turn on usage-based pricing and set a limit',
+                        label: t('commands.enableUsageBasedOption'),
+                        description: t('commands.enableUsageBasedDescription'),
                         value: 'enable'
                     },
                     {
-                        label: '$(pencil) Set Monthly Limit',
-                        description: 'Change your monthly spending limit',
+                        label: t('commands.setMonthlyLimitOption'),
+                        description: t('commands.setMonthlyLimitDescription'),
                         value: 'set'
                     },
                     {
-                        label: '$(x) Disable Usage-Based Pricing',
-                        description: 'Turn off usage-based pricing',
+                        label: t('commands.disableUsageBasedOption'),
+                        description: t('commands.disableUsageBasedDescription'),
                         value: 'disable'
                     }
                 ], {
-                    placeHolder: `Current status: ${isEnabled ? 'Enabled' : 'Disabled'} ${isEnabled ? `(Limit: $${currentLimit.hardLimit})` : ''}`
+                    placeHolder: t('commands.currentStatus', { 
+                        status: isEnabled ? t('statusBar.enabled') : t('statusBar.disabled'),
+                        limit: isEnabled ? `(${t('statusBar.limit')}: $${currentLimit.hardLimit})` : ''
+                    })
                 });
 
                 if (!quickPick) {
@@ -227,57 +230,57 @@ export async function activate(context: vscode.ExtensionContext) {
                     case 'enable':
                         if (!isEnabled) {
                             const limit = await vscode.window.showInputBox({
-                                prompt: 'Enter monthly spending limit in dollars',
+                                prompt: t('commands.enterMonthlyLimit'),
                                 placeHolder: '50',
                                 validateInput: (value) => {
                                     const num = Number(value);
-                                    return (!isNaN(num) && num > 0) ? null : 'Please enter a valid number greater than 0';
+                                    return (!isNaN(num) && num > 0) ? null : t('commands.validNumberRequired');
                                 }
                             });
                             if (limit) {
                                 await setUsageLimit(token, Number(limit), false);
                                 const formattedLimit = await convertAndFormatCurrency(Number(limit));
-                                vscode.window.showInformationMessage(`Usage-based pricing enabled with ${formattedLimit} limit`);
+                                vscode.window.showInformationMessage(t('commands.usageBasedEnabledWithLimit', { limit: formattedLimit }));
                                 await updateStats(statusBarItem);
                             }
                         } else {
-                            vscode.window.showInformationMessage('Usage-based pricing is already enabled');
+                            vscode.window.showInformationMessage(t('commands.usageBasedAlreadyEnabled'));
                         }
                         break;
 
                     case 'set':
                         if (isEnabled) {
                             const newLimit = await vscode.window.showInputBox({
-                                prompt: 'Enter new monthly spending limit in dollars',
+                                prompt: t('commands.enterNewMonthlyLimit'),
                                 placeHolder: String(currentLimit.hardLimit),
                                 validateInput: (value) => {
                                     const num = Number(value);
-                                    return (!isNaN(num) && num > 0) ? null : 'Please enter a valid number greater than 0';
+                                    return (!isNaN(num) && num > 0) ? null : t('commands.validNumberRequired');
                                 }
                             });
                             if (newLimit) {
                                 await setUsageLimit(token, Number(newLimit), false);
                                 const formattedLimit = await convertAndFormatCurrency(Number(newLimit));
-                                vscode.window.showInformationMessage(`Monthly limit updated to ${formattedLimit}`);
+                                vscode.window.showInformationMessage(t('commands.limitUpdatedTo', { limit: formattedLimit }));
                                 await updateStats(statusBarItem);
                             }
                         } else {
-                            vscode.window.showWarningMessage('Please enable usage-based pricing first');
+                            vscode.window.showWarningMessage(t('commands.enableUsageBasedFirst'));
                         }
                         break;
 
                     case 'disable':
                         if (isEnabled) {
                             await setUsageLimit(token, 0, true);
-                            vscode.window.showInformationMessage('Usage-based pricing disabled');
+                            vscode.window.showInformationMessage(t('commands.usageBasedDisabled'));
                             await updateStats(statusBarItem);
                         } else {
-                            vscode.window.showInformationMessage('Usage-based pricing is already disabled');
+                            vscode.window.showInformationMessage(t('commands.usageBasedAlreadyDisabled'));
                         }
                         break;
                 }
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Failed to manage usage limit: ${error.message}`);
+                vscode.window.showErrorMessage(t('commands.failedToManageLimit', { error: error.message }));
             }
         });
         
@@ -295,7 +298,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 }));
                 
                 const selected = await vscode.window.showQuickPick(currencyPicks, {
-                    placeHolder: 'Select currency for display',
+                    placeHolder: t('commands.selectCurrencyPrompt'),
                 });
                 
                 if (selected) {
@@ -323,8 +326,8 @@ export async function activate(context: vscode.ExtensionContext) {
                         value: lang.value
                     })),
                     {
-                        placeHolder: `Current: ${currentLabel}. Select a language for Cursor Stats interface`,
-                        title: 'Select Language / 选择语言 / 언어 선택'
+                        placeHolder: t('commands.currentLanguagePrompt', { language: currentLabel }),
+                        title: t('commands.selectLanguagePrompt')
                     }
                 );
                 
@@ -332,7 +335,6 @@ export async function activate(context: vscode.ExtensionContext) {
                     const config = vscode.workspace.getConfiguration('cursorStats');
                     await config.update('language', selectedLanguage.value, vscode.ConfigurationTarget.Global);
                     log(`[Command] Language changed to: ${selectedLanguage.value}`);
-                    // 成功消息会通过onLanguageChangeCallback自动显示
                 }
             })
         );
