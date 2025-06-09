@@ -313,7 +313,8 @@ export async function activate(context: vscode.ExtensionContext) {
                 const languages = [
                     { label: 'English', value: 'en' },
                     { label: '中文', value: 'zh' },
-                    { label: '한국어', value: 'ko' }
+                    { label: '한국어', value: 'ko' },
+                    { label: '日本語', value: 'ja' }
                 ];
                 
                 const currentLanguage = vscode.workspace.getConfiguration('cursorStats').get<string>('language', 'en');

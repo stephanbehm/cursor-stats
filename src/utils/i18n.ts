@@ -90,7 +90,7 @@ function loadLanguagePackFromFile(languageCode: string): LanguagePack | null {
  * Load all language packs
  */
 function loadLanguagePacks(): void {
-  const supportedLanguages = ['en', 'zh', 'ko'];
+  const supportedLanguages = ['en', 'zh', 'ko', 'ja'];
   
   for (const lang of supportedLanguages) {
     const pack = loadLanguagePackFromFile(lang);
@@ -129,7 +129,8 @@ function updateCurrentLanguage(): void {
         const languageLabels: { [key: string]: string } = {
           'en': 'English',
           'zh': '中文',
-          'ko': '한국어'
+          'ko': '한국어',
+          'ja': '日本語'
         };
         onLanguageChangeCallback(newLanguage, languageLabels[newLanguage] || newLanguage);
       }
@@ -138,8 +139,6 @@ function updateCurrentLanguage(): void {
     }
   }
 }
-
-
 
 /**
  * Get translated text with fallback mechanism
