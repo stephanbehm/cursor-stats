@@ -344,11 +344,13 @@
             "default": "en",
             "enum": [
               "en",
+              "de",
               "zh",
               "ko"
             ],
             "enumDescriptions": [
               "English",
+              "Deutsch",
               "中文 (Chinese)",
               "한국어 (Korean)"
             ],
