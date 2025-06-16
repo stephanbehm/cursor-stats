@@ -93,7 +93,7 @@ function loadLanguagePackFromFile(languageCode: string): LanguagePack | null {
  * Load all language packs
  */
 function loadLanguagePacks(): void {
-  const supportedLanguages = ['en', 'zh', 'ko', 'ja', 'de'];
+  const supportedLanguages = ['en', 'zh', 'ko', 'ja', 'de', 'ru', 'kk'];
 
   for (const lang of supportedLanguages) {
     const pack = loadLanguagePackFromFile(lang);

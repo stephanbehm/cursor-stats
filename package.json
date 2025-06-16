@@ -345,16 +345,20 @@
             "enum": [
               "en",
               "de",
+              "ru",
               "zh",
               "ko",
-              "ja"
+              "ja",
+              "kk"
             ],
             "enumDescriptions": [
               "English",
-              "Deutsch",
+              "Deutsch (German)",
+              "Русский (Russian)",
               "中文 (Chinese)",
               "한국어 (Korean)",
-              "日本語 (Japanese)"
+              "日本語 (Japanese)",
+              "Қазақша (Kazakh)"
             ],
             "description": "Language for the extension interface and messages."
           }

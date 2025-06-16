@@ -329,9 +329,12 @@ export async function activate(context: vscode.ExtensionContext) {
         log('[Command] Opening language selection...');
         const languages = [
           { label: 'English', value: 'en' },
+          { label: 'German', value: 'de' },
+          { label: 'Russian', value: 'ru' },
           { label: '中文', value: 'zh' },
           { label: '한국어', value: 'ko' },
           { label: '日本語', value: 'ja' },
+          { label: 'Kazakh', value: 'kk' },
         ];
 
         const currentLanguage = vscode.workspace
