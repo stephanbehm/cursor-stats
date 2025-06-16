@@ -137,11 +137,27 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 
 ### Localization
 
-To add a new language, you need to:
+To add a new language:
 
-1.  Add the language configuration to `src/config/languages.ts`.
-2.  Create a new locale file in `src/locales/` (e.g., `src/locales/fr.json` for French).
-3.  Run `npm run compile` to update `package.json` and compile the extension.
+1. Add the language configuration to `src/config/languages.ts`:
+
+   ```typescript
+   {
+     code: 'fr',           // ISO 639-1 language code
+     nativeName: 'Français', // Native language name
+     englishName: 'French',  // English name for the language
+   }
+   ```
+
+2. Create a new locale file in `src/locales/` (e.g., `src/locales/fr.json` for French).
+
+3. Run `npm run compile` to automatically update `package.json` and compile the extension.
+
+The system will automatically:
+
+- Update the Cursor/VS Code settings enum with your new language
+- Generate proper language descriptions
+- Make the language available in the language selection dropdown
 
 ## 💬 Support
 

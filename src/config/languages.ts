@@ -117,6 +117,21 @@ export function getPackageJsonLanguageEnum(): {
 }
 
 /**
+ * Generate complete package.json language configuration
+ */
+export function generatePackageJsonLanguageConfig() {
+  const { enum: languageEnum, enumDescriptions } = getPackageJsonLanguageEnum();
+
+  return {
+    type: 'string',
+    default: DEFAULT_LANGUAGE,
+    enum: languageEnum,
+    enumDescriptions: enumDescriptions,
+    description: 'Language for the extension interface and messages.',
+  };
+}
+
+/**
  * Default language code
  */
 export const DEFAULT_LANGUAGE = 'en';
