@@ -3,11 +3,16 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { log } from './logger';
 import { LanguagePack } from '../interfaces/i18n';
+import {
+  getEnabledLanguageCodes,
+  getLanguageNativeName,
+  DEFAULT_LANGUAGE,
+} from '../config/languages';
 
 // Language pack storage
 const languagePacks: { [key: string]: LanguagePack } = {};
 
-let currentLanguage = 'en';
+let currentLanguage = DEFAULT_LANGUAGE;
 let currentLanguagePack: LanguagePack;
 let onLanguageChangeCallback: ((newLanguage: string, languageLabel: string) => void) | null = null;
 
@@ -20,8 +25,8 @@ export function initializeI18n(): void {
   // Set initial language pack
   if (!currentLanguagePack) {
     const config = vscode.workspace.getConfiguration('cursorStats');
-    const language = config.get<string>('language', 'en');
-    currentLanguagePack = languagePacks[language] || languagePacks['en'];
+    const language = config.get<string>('language', DEFAULT_LANGUAGE);
+    currentLanguagePack = languagePacks[language] || languagePacks[DEFAULT_LANGUAGE];
     currentLanguage = language;
 
     if (!currentLanguagePack) {
@@ -93,7 +98,7 @@ function loadLanguagePackFromFile(languageCode: string): LanguagePack | null {
  * Load all language packs
  */
 function loadLanguagePacks(): void {
-  const supportedLanguages = ['en', 'zh', 'ko', 'ja', 'de', 'ru', 'kk'];
+  const supportedLanguages = getEnabledLanguageCodes();
 
   for (const lang of supportedLanguages) {
     const pack = loadLanguagePackFromFile(lang);
@@ -102,15 +107,15 @@ function loadLanguagePacks(): void {
     }
   }
 
-  // Ensure English language pack is loaded (required default language)
-  if (!languagePacks['en']) {
+  // Ensure default language pack is loaded (required fallback language)
+  if (!languagePacks[DEFAULT_LANGUAGE]) {
     log(
-      '[I18n] Critical: English language pack not loaded! Extension may not work properly.',
+      `[I18n] Critical: ${DEFAULT_LANGUAGE.toUpperCase()} language pack not loaded! Extension may not work properly.`,
       true,
     );
   }
 
-  log('[I18n] Language packs loaded');
+  log(`[I18n] Language packs loaded for: ${supportedLanguages.join(', ')}`);
 }
 
 /**
@@ -118,34 +123,26 @@ function loadLanguagePacks(): void {
  */
 function updateCurrentLanguage(): void {
   const config = vscode.workspace.getConfiguration('cursorStats');
-  const newLanguage = config.get<string>('language', 'en');
+  const newLanguage = config.get<string>('language', DEFAULT_LANGUAGE);
 
   if (newLanguage !== currentLanguage) {
     const oldLanguage = currentLanguage;
     currentLanguage = newLanguage;
 
-    // Get language pack, fallback to English if not available
-    const languagePack = languagePacks[newLanguage] || languagePacks['en'];
+    // Get language pack, fallback to default language if not available
+    const languagePack = languagePacks[newLanguage] || languagePacks[DEFAULT_LANGUAGE];
     if (languagePack) {
       currentLanguagePack = languagePack;
       log(`[I18n] Language changed to: ${newLanguage}`);
 
       // Trigger language change callback
-      if (onLanguageChangeCallback && oldLanguage !== 'en') {
+      if (onLanguageChangeCallback && oldLanguage !== DEFAULT_LANGUAGE) {
         // Avoid triggering during initialization
-        const languageLabels: { [key: string]: string } = {
-          en: 'English',
-          zh: '中文',
-          ko: '한국어',
-          ja: '日本語',
-          de: 'Deutsch',
-          ru: 'Русский',
-          kk: 'Қазақша',
-        };
-        onLanguageChangeCallback(newLanguage, languageLabels[newLanguage] || newLanguage);
+        const languageLabel = getLanguageNativeName(newLanguage);
+        onLanguageChangeCallback(newLanguage, languageLabel);
       }
     } else {
-      log(`[I18n] Warning: No language pack found for ${newLanguage} or English`, true);
+      log(`[I18n] Warning: No language pack found for ${newLanguage} or ${DEFAULT_LANGUAGE}`, true);
     }
   }
 }
@@ -158,10 +155,12 @@ function updateCurrentLanguage(): void {
 export function t(key: string, params?: { [key: string]: string | number }): string {
   let value = getTranslationValue(key, currentLanguagePack);
 
-  // If translation not found in current language and current language is not English, try English fallback
-  if (value === null && currentLanguage !== 'en' && languagePacks['en']) {
-    log(`[I18n] Translation key '${key}' not found in ${currentLanguage}, falling back to English`);
-    value = getTranslationValue(key, languagePacks['en']);
+  // If translation not found in current language and current language is not default, try default language fallback
+  if (value === null && currentLanguage !== DEFAULT_LANGUAGE && languagePacks[DEFAULT_LANGUAGE]) {
+    log(
+      `[I18n] Translation key '${key}' not found in ${currentLanguage}, falling back to ${DEFAULT_LANGUAGE}`,
+    );
+    value = getTranslationValue(key, languagePacks[DEFAULT_LANGUAGE]);
   }
 
   // If still no translation found, return the key itself

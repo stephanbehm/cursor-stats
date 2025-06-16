@@ -71,39 +71,39 @@
 <details id="section-configuration">
 <summary style="cursor: pointer"><h2 style="display: inline">⚙️ Configuration</h2></summary>
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `cursorStats.enableLogging` | Enable detailed logging | `true` |
-| `cursorStats.enableStatusBarColors` | Toggle colored status bar | `true` |
-| `cursorStats.statusBarColorThresholds` | Customize status bar text color based on usage percentage | `Array of 14 color thresholds` |
-| `cursorStats.enableAlerts` | Enable usage alerts | `true` |
-| `cursorStats.usageAlertThresholds` | Percentage thresholds for usage alerts | `[10, 30, 50, 75, 90, 100]` |
-| `cursorStats.showTotalRequests` | Show sum of all requests instead of only fast requests | `false` |
-| `cursorStats.refreshInterval` | Update frequency (seconds) | `60` |
-| `cursorStats.spendingAlertThreshold` | Spending alert threshold (in your selected currency) | `1` |
-| `cursorStats.currency` | Custom currency conversion | `USD` |
-| `cursorStats.showProgressBars` | Enable progress visualization | `false` |
-| `cursorStats.progressBarLength` | Progress bar length (for progress visualization) | `10` |
-| `cursorStats.progressBarWarningThreshold` | Percentage threshold for progress bar warning (yellow) | `50` |
-| `cursorStats.progressBarCriticalThreshold` | Percentage threshold for progress bar critical (red) | `75` |
-| `cursorStats.customDatabasePath` | Custom path to Cursor database | `""` |
-| `cursorStats.excludeWeekends` | Exclude weekends from period progress and daily calculations | `false` |
-| `cursorStats.showDailyRemaining` | Show estimated fast requests remaining per day | `false` |
-| `cursorStats.language` | Language for extension interface and messages | `en` |
+| Setting                                    | Description                                                  | Default                        |
+| ------------------------------------------ | ------------------------------------------------------------ | ------------------------------ |
+| `cursorStats.enableLogging`                | Enable detailed logging                                      | `true`                         |
+| `cursorStats.enableStatusBarColors`        | Toggle colored status bar                                    | `true`                         |
+| `cursorStats.statusBarColorThresholds`     | Customize status bar text color based on usage percentage    | `Array of 14 color thresholds` |
+| `cursorStats.enableAlerts`                 | Enable usage alerts                                          | `true`                         |
+| `cursorStats.usageAlertThresholds`         | Percentage thresholds for usage alerts                       | `[10, 30, 50, 75, 90, 100]`    |
+| `cursorStats.showTotalRequests`            | Show sum of all requests instead of only fast requests       | `false`                        |
+| `cursorStats.refreshInterval`              | Update frequency (seconds)                                   | `60`                           |
+| `cursorStats.spendingAlertThreshold`       | Spending alert threshold (in your selected currency)         | `1`                            |
+| `cursorStats.currency`                     | Custom currency conversion                                   | `USD`                          |
+| `cursorStats.showProgressBars`             | Enable progress visualization                                | `false`                        |
+| `cursorStats.progressBarLength`            | Progress bar length (for progress visualization)             | `10`                           |
+| `cursorStats.progressBarWarningThreshold`  | Percentage threshold for progress bar warning (yellow)       | `50`                           |
+| `cursorStats.progressBarCriticalThreshold` | Percentage threshold for progress bar critical (red)         | `75`                           |
+| `cursorStats.customDatabasePath`           | Custom path to Cursor database                               | `""`                           |
+| `cursorStats.excludeWeekends`              | Exclude weekends from period progress and daily calculations | `false`                        |
+| `cursorStats.showDailyRemaining`           | Show estimated fast requests remaining per day               | `false`                        |
+| `cursorStats.language`                     | Language for extension interface and messages                | `en`                           |
 
 </details>
 
 <details id="section-commands">
 <summary style="cursor: pointer"><h2 style="display: inline">🔧 Commands</h2></summary>
 
-| Command | Description |
-|---------|-------------|
-| `cursor-stats.refreshStats` | Manually refresh statistics |
-| `cursor-stats.openSettings` | Open extension settings |
-| `cursor-stats.setLimit` | Configure usage-based pricing settings |
-| `cursor-stats.selectCurrency` | Change display currency |
+| Command                       | Description                             |
+| ----------------------------- | --------------------------------------- |
+| `cursor-stats.refreshStats`   | Manually refresh statistics             |
+| `cursor-stats.openSettings`   | Open extension settings                 |
+| `cursor-stats.setLimit`       | Configure usage-based pricing settings  |
+| `cursor-stats.selectCurrency` | Change display currency                 |
 | `cursor-stats.selectLanguage` | Select language for extension interface |
-| `cursor-stats.createReport` | Generate diagnostic report |
+| `cursor-stats.createReport`   | Generate diagnostic report              |
 
 </details>
 
@@ -134,6 +134,14 @@ Or install directly from [VS Code Marketplace](https://marketplace.visualstudio.
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
+
+### Localization
+
+To add a new language, you need to:
+
+1.  Add the language configuration to `src/config/languages.ts`.
+2.  Create a new locale file in `src/locales/` (e.g., `src/locales/fr.json` for French).
+3.  Run `npm run compile` to update `package.json` and compile the extension.
 
 ## 💬 Support
 

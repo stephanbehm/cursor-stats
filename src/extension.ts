@@ -17,7 +17,12 @@ import { updateStats } from './utils/updateStats';
 import { SUPPORTED_CURRENCIES } from './utils/currency';
 import { convertAndFormatCurrency } from './utils/currency';
 import { createReportCommand } from './utils/report';
-import { initializeI18n, t, setOnLanguageChangeCallback } from './utils/i18n';
+import { initializeI18n, t, setOnLanguageChangeCallback, getCurrentLanguage } from './utils/i18n';
+import {
+  getLanguageSelectionItems,
+  DEFAULT_LANGUAGE,
+  getLanguageNativeName,
+} from './config/languages';
 
 let statusBarItem: vscode.StatusBarItem;
 let extensionContext: vscode.ExtensionContext;
@@ -327,26 +332,17 @@ export async function activate(context: vscode.ExtensionContext) {
       }),
       vscode.commands.registerCommand('cursor-stats.selectLanguage', async () => {
         log('[Command] Opening language selection...');
-        const languages = [
-          { label: 'English', value: 'en' },
-          { label: 'German', value: 'de' },
-          { label: 'Russian', value: 'ru' },
-          { label: '中文', value: 'zh' },
-          { label: '한국어', value: 'ko' },
-          { label: '日本語', value: 'ja' },
-          { label: 'Kazakh', value: 'kk' },
-        ];
+        const languages = getLanguageSelectionItems();
 
-        const currentLanguage = vscode.workspace
-          .getConfiguration('cursorStats')
-          .get<string>('language', 'en');
+        const currentLanguageCode = getCurrentLanguage();
+        const currentLanguageConfig = languages.find((lang) => lang.value === currentLanguageCode);
         const currentLabel =
-          languages.find((lang) => lang.value === currentLanguage)?.label || 'English';
+          currentLanguageConfig?.label || getLanguageNativeName(DEFAULT_LANGUAGE);
 
         const selectedLanguage = await vscode.window.showQuickPick(
           languages.map((lang) => ({
             label: lang.label,
-            description: lang.value === currentLanguage ? '(Current)' : '',
+            description: lang.value === currentLanguageCode ? '(Current)' : lang.description,
             value: lang.value,
           })),
           {
@@ -355,7 +351,7 @@ export async function activate(context: vscode.ExtensionContext) {
           },
         );
 
-        if (selectedLanguage && selectedLanguage.value !== currentLanguage) {
+        if (selectedLanguage && selectedLanguage.value !== currentLanguageCode) {
           const config = vscode.workspace.getConfiguration('cursorStats');
           await config.update(
             'language',
