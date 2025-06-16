@@ -138,6 +138,9 @@ function updateCurrentLanguage(): void {
           zh: '中文',
           ko: '한국어',
           ja: '日本語',
+          de: 'Deutsch',
+          ru: 'Русский',
+          kk: 'Қазақша',
         };
         onLanguageChangeCallback(newLanguage, languageLabels[newLanguage] || newLanguage);
       }
